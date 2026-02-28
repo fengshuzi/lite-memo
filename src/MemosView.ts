@@ -30,6 +30,8 @@ export class MemosView extends ItemView {
     private quickTagsSelect: HTMLSelectElement | null = null;
     /** 番茄钟 UI 元素缓存 (memoId -> HTMLElement) */
     private pomodoroUIElements: Map<string, HTMLElement> = new Map();
+    /** 当前专注模式关联的 memoId（stableMemoId），null 表示未开启 */
+    private focusMemoId: string | null = null;
     /** 内部修改文件时跳过自动刷新（由 modify 事件触发） */
     private skipNextAutoRefresh: boolean = false;
 
@@ -676,6 +678,26 @@ export class MemosView extends ItemView {
             // 渲染单条闪念
             this.renderMemoCard(memo);
         }
+
+        // 列表重新渲染后，如果已在专注模式则重新标记目标卡片
+        if (this.focusMemoId && this.memosList.hasClass('memos-focus-mode')) {
+            const lastDash = this.focusMemoId.lastIndexOf('-');
+            if (lastDash !== -1) {
+                const filePath = this.focusMemoId.substring(0, lastDash);
+                const lineNumber = parseInt(this.focusMemoId.substring(lastDash + 1));
+                const memo = this.displayedMemos.find(
+                    m => m.filePath === filePath && m.lineNumber === lineNumber
+                );
+                if (memo) {
+                    const card = this.memosList.querySelector(
+                        `[data-memo-id="${memo.id}"]`
+                    ) as HTMLElement;
+                    if (card) {
+                        card.addClass('memos-focus-target');
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -688,6 +710,14 @@ export class MemosView extends ItemView {
 
         const card = this.memosList.createDiv({ cls: 'memos-card' });
         card.setAttribute('data-memo-id', memo.id);
+
+        // 专注模式：标记当前专注的卡片
+        if (this.focusMemoId) {
+            const stableMemoId = `${memo.filePath}-${memo.lineNumber}`;
+            if (stableMemoId === this.focusMemoId) {
+                card.addClass('memos-focus-target');
+            }
+        }
 
         // 如果是任务，添加任务状态类
         if (memo.taskStatus) {
@@ -949,6 +979,14 @@ export class MemosView extends ItemView {
         // 创建新卡片
         const newCard = this.memosList.createDiv({ cls: 'memos-card' });
         newCard.setAttribute('data-memo-id', newMemo.id);
+
+        // 专注模式：标记当前专注的卡片
+        if (this.focusMemoId) {
+            const stableMemoId = `${newMemo.filePath}-${newMemo.lineNumber}`;
+            if (stableMemoId === this.focusMemoId) {
+                newCard.addClass('memos-focus-target');
+            }
+        }
 
         // 如果是任务，添加任务状态类
         if (newMemo.taskStatus) {
@@ -1650,6 +1688,59 @@ export class MemosView extends ItemView {
     }
 
     /**
+     * 更新专注模式状态
+     * 仅当番茄钟正在运行（running）或休息中（short_break/long_break）时开启
+     * paused 不触发专注模式（可能是残留的旧数据，或者用户主动暂停想去看其他任务）
+     */
+    private updateFocusMode(): void {
+        if (!this.memosList) return;
+
+        const focusSession = Array.from(
+            this.pomodoroManager.getActivePomodoros()
+        ).find(s =>
+            s.state === 'running' || s.state === 'short_break' || s.state === 'long_break'
+        );
+
+        if (focusSession) {
+            const newFocusId = focusSession.memoId;
+            if (this.focusMemoId !== newFocusId) {
+                this.memosList.querySelectorAll('.memos-focus-target').forEach(
+                    el => el.removeClass('memos-focus-target')
+                );
+                this.focusMemoId = newFocusId;
+
+                const lastDash = newFocusId.lastIndexOf('-');
+                if (lastDash !== -1) {
+                    const filePath = newFocusId.substring(0, lastDash);
+                    const lineNumber = parseInt(newFocusId.substring(lastDash + 1));
+                    const memo = this.displayedMemos.find(
+                        m => m.filePath === filePath && m.lineNumber === lineNumber
+                    );
+                    if (memo) {
+                        const card = this.memosList.querySelector(
+                            `[data-memo-id="${memo.id}"]`
+                        ) as HTMLElement;
+                        if (card) {
+                            card.addClass('memos-focus-target');
+                        }
+                    }
+                }
+            }
+            if (!this.memosList.hasClass('memos-focus-mode')) {
+                this.memosList.addClass('memos-focus-mode');
+            }
+        } else {
+            if (this.focusMemoId) {
+                this.focusMemoId = null;
+                this.memosList.removeClass('memos-focus-mode');
+                this.memosList.querySelectorAll('.memos-focus-target').forEach(
+                    el => el.removeClass('memos-focus-target')
+                );
+            }
+        }
+    }
+
+    /**
      * 番茄钟状态变化事件
      */
     private onPomodoroChange(session: PomodoroSession): void {
@@ -1717,6 +1808,9 @@ export class MemosView extends ItemView {
                 this.pomodoroUIElements.delete(session.memoId);
             }
         }
+
+        // 更新专注模式
+        this.updateFocusMode();
     }
 
     /**

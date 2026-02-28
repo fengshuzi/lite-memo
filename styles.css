@@ -1086,3 +1086,38 @@
 .memos-pomodoro-btn-start-next:hover {
     background: rgba(230, 126, 34, 0.1);
 }
+
+/* ============================================
+   专注模式
+   ============================================ */
+
+/* 专注模式下，所有卡片和日期头默认置灰 */
+.memos-focus-mode .memos-card {
+    opacity: 0.3;
+    filter: grayscale(0.6);
+    transform: scale(0.98);
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.memos-focus-mode .memos-date-header {
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+}
+
+/* 专注目标卡片：完全高亮 */
+.memos-focus-mode .memos-card.memos-focus-target {
+    opacity: 1;
+    filter: none;
+    transform: scale(1);
+    pointer-events: auto;
+    box-shadow: 0 0 0 2px var(--interactive-accent), var(--memos-card-shadow-hover);
+    border-color: var(--interactive-accent);
+}
+
+/* 悬停在置灰卡片上时，稍微恢复可见度方便查看 */
+.memos-focus-mode .memos-card:hover {
+    opacity: 0.6;
+    filter: grayscale(0.2);
+    pointer-events: auto;
+}
