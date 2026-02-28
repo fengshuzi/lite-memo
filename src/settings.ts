@@ -264,6 +264,77 @@ export class MemosSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
+        // 番茄钟设置
+        containerEl.createEl('h3', { text: '🍅 番茄钟' });
+
+        new Setting(containerEl)
+            .setName('启用番茄钟')
+            .setDesc('在任务卡片上显示番茄钟功能')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.enablePomodoro)
+                .onChange(async (value) => {
+                    this.plugin.settings.enablePomodoro = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('专注时长')
+            .setDesc('每个番茄钟的专注时间（分钟）')
+            .addSlider(slider => slider
+                .setLimits(1, 60, 1)
+                .setValue(this.plugin.settings.pomodoroDuration)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.pomodoroDuration = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('短休息时长')
+            .setDesc('每个番茄钟完成后的短休息时间（分钟）')
+            .addSlider(slider => slider
+                .setLimits(1, 30, 1)
+                .setValue(this.plugin.settings.pomodoroShortBreak)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.pomodoroShortBreak = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('长休息时长')
+            .setDesc('连续完成多个番茄钟后的长休息时间（分钟）')
+            .addSlider(slider => slider
+                .setLimits(5, 60, 5)
+                .setValue(this.plugin.settings.pomodoroLongBreak)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.pomodoroLongBreak = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('长休息间隔')
+            .setDesc('每完成多少个番茄后进入长休息')
+            .addSlider(slider => slider
+                .setLimits(2, 8, 1)
+                .setValue(this.plugin.settings.pomodoroLongBreakInterval)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.pomodoroLongBreakInterval = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('完成提示音')
+            .setDesc('番茄钟和休息完成时播放提示音')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.pomodoroSoundEnabled)
+                .onChange(async (value) => {
+                    this.plugin.settings.pomodoroSoundEnabled = value;
+                    await this.plugin.saveSettings();
+                }));
+
         // 快捷键提示
         containerEl.createEl('h3', { text: '⌨️ 快捷键' });
         

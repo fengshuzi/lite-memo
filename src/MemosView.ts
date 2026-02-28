@@ -50,6 +50,8 @@ export class MemosView extends ItemView {
         this.pomodoroManager.addListener({
             onSessionChange: (session) => this.onPomodoroChange(session),
             onSessionComplete: (session) => this.onPomodoroComplete(session),
+            onBreakStart: (session) => this.onPomodoroChange(session),
+            onBreakEnd: (session) => this.onPomodoroChange(session),
         });
     }
 
@@ -843,7 +845,9 @@ export class MemosView extends ItemView {
 
         const lineIndex = memo.lineNumber - 1;
         const oldLine = lines[lineIndex];
-        const newLine = this.toggleTaskStatusInLine(oldLine);
+        // 使用稳定的 memoId（与番茄钟一致）
+        const stableMemoId = `${memo.filePath}-${memo.lineNumber}`;
+        const newLine = this.toggleTaskStatusInLine(oldLine, stableMemoId);
 
         // 记录旧状态，用于判断是否需要启动番茄钟
         const oldStatus = memo.taskStatus;
@@ -894,6 +898,26 @@ export class MemosView extends ItemView {
 
                         setTimeout(() => {
                             this.pomodoroManager.start(stableMemoId);
+                        }, 200);
+                    }
+                }
+
+                // 如果启用了番茄钟，且任务从 DOING 变成 DONE/CANCELLED，自动停止并保存番茄钟
+                if (this.settings.enablePomodoro &&
+                    (updatedMemo.taskStatus === 'DONE' || updatedMemo.taskStatus === 'CANCELLED') &&
+                    oldStatus === 'DOING') {
+                    const stableMemoId = `${updatedMemo.filePath}-${updatedMemo.lineNumber}`;
+                    const session = this.pomodoroManager.getSession(stableMemoId);
+
+                    if (session && (session.state === 'short_break' || session.state === 'long_break')) {
+                        setTimeout(() => {
+                            this.pomodoroManager.skipBreak(stableMemoId);
+                        }, 200);
+                    } else if (session && (session.state === 'running' || session.state === 'paused')) {
+                        console.log('任务完成，停止番茄钟，stableMemoId:', stableMemoId);
+
+                        setTimeout(() => {
+                            this.pomodoroManager.stop(session.id, true);
                         }, 200);
                     }
                 }
@@ -1063,8 +1087,10 @@ export class MemosView extends ItemView {
 
     /**
      * 对单行文本执行任务状态切换（参考 obsidian-time-tracking）
+     * @param line 原始行内容
+     * @param memoId memo ID（可选，用于计算番茄钟暂停时间）
      */
-    private toggleTaskStatusInLine(line: string): string {
+    private toggleTaskStatusInLine(line: string, memoId?: string): string {
         // 如果禁用时间追踪，直接返回原行（不做任何修改）
         if (!this.settings.enableTimeTracking) {
             return line;
@@ -1125,11 +1151,48 @@ export class MemosView extends ItemView {
             // DOING → DONE 或 [x]
             const [, , timeStr, content] = doingMatch;
             const trackingInfo = extractTrackingInfo(line);
-            
+
             if (trackingInfo) {
                 const start = new Date(trackingInfo.startTime);
                 const end = new Date();
-                const durationSeconds = Math.floor((end.getTime() - start.getTime()) / 1000);
+                let durationSeconds = Math.floor((end.getTime() - start.getTime()) / 1000);
+
+                // 如果有 memoId，检查是否有番茄钟暂停时间需要减去
+                if (memoId && this.settings.enablePomodoro) {
+                    const pomodoroSessions = this.pomodoroManager.getMemoPomodoros(memoId);
+                    const taskStartTime = start.getTime();
+                    const taskEndTime = end.getTime();
+
+                    for (const session of pomodoroSessions) {
+                        // 检查番茄钟是否与任务时间段有重叠
+                        const sessionStart = session.startTime;
+                        const sessionEnd = session.endTime || Date.now();
+
+                        // 判断时间区间是否有重叠
+                        const hasOverlap = !(sessionEnd < taskStartTime || sessionStart > taskEndTime);
+
+                        if (hasOverlap) {
+                            // 累加已记录的暂停时间
+                            durationSeconds -= (session.pausedAccumulatedSeconds || 0);
+
+                            // 如果番茄钟还在暂停中，且暂停发生在任务期间
+                            if (session.state === 'paused' && session.pauseHistory) {
+                                const currentPause = session.pauseHistory.find(p => !p.pauseEndTime);
+                                if (currentPause) {
+                                    // 计算本次暂停的时长
+                                    const pauseDuration = Math.floor(
+                                        (Date.now() - currentPause.pauseStartTime) / 1000
+                                    );
+                                    durationSeconds -= pauseDuration;
+                                }
+                            }
+                        }
+                    }
+
+                    // 确保时长不为负
+                    if (durationSeconds < 0) durationSeconds = 0;
+                }
+
                 const durationStr = formatDuration(durationSeconds);
                 const taskText = removeTimeComment(content).trim();
                 
@@ -1396,16 +1459,13 @@ export class MemosView extends ItemView {
      * 渲染番茄钟控制区
      */
     private renderPomodoroControl(memo: MemoItem, card: HTMLElement): void {
-        // 使用稳定的 memoId：filePath-lineNumber
         const stableMemoId = `${memo.filePath}-${memo.lineNumber}`;
 
         const session = this.pomodoroManager.getSession(stableMemoId);
 
-        // 如果没有会话且没有完成的记录，不显示任何内容
         const completedCount = this.pomodoroManager.getMemoPomodoros(stableMemoId)
             .filter(s => s.state === 'completed').length;
 
-        // 只有在存在活跃会话或有完成记录时才创建容器
         if (!session && completedCount === 0) {
             return;
         }
@@ -1413,11 +1473,11 @@ export class MemosView extends ItemView {
         const pomodoroContainer = card.createDiv({ cls: 'memos-pomodoro-control' });
         this.pomodoroUIElements.set(stableMemoId, pomodoroContainer);
 
-        if (session) {
-            // 运行中/暂停状态
+        if (session && (session.state === 'short_break' || session.state === 'long_break')) {
+            this.renderPomodoroBreak(pomodoroContainer, memo, session);
+        } else if (session) {
             this.renderPomodoroActive(pomodoroContainer, memo, session);
         } else if (completedCount > 0) {
-            // 只有完成记录
             this.renderPomodoroCompleted(pomodoroContainer, memo, completedCount);
         }
     }
@@ -1518,6 +1578,45 @@ export class MemosView extends ItemView {
     }
 
     /**
+     * 渲染休息阶段
+     */
+    private renderPomodoroBreak(container: HTMLElement, memo: MemoItem, session: PomodoroSession): void {
+        const isLong = session.state === 'long_break';
+        container.addClass(isLong ? 'memos-pomodoro-long-break' : 'memos-pomodoro-short-break');
+
+        const icon = container.createSpan({ cls: 'memos-pomodoro-icon' });
+        icon.textContent = isLong ? '🌿' : '☕';
+
+        const label = container.createSpan({ cls: 'memos-pomodoro-break-label' });
+        label.textContent = isLong ? '长休息' : '短休息';
+
+        const timerEl = container.createSpan({ cls: 'memos-pomodoro-timer memos-pomodoro-break-timer' });
+        this.updateTimerDisplay(timerEl, session);
+
+        const controls = container.createDiv({ cls: 'memos-pomodoro-controls' });
+
+        const skipBtn = controls.createEl('button', {
+            cls: 'memos-pomodoro-btn',
+            text: '⏭ 跳过'
+        });
+        skipBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const stableMemoId = `${memo.filePath}-${memo.lineNumber}`;
+            this.pomodoroManager.skipBreak(stableMemoId);
+        });
+
+        const startNextBtn = controls.createEl('button', {
+            cls: 'memos-pomodoro-btn memos-pomodoro-btn-start-next',
+            text: '🍅 开始下一个'
+        });
+        startNextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const stableMemoId = `${memo.filePath}-${memo.lineNumber}`;
+            this.pomodoroManager.start(stableMemoId);
+        });
+    }
+
+    /**
      * 更新倒计时显示
      */
     private updateTimerDisplay(el: HTMLElement, session: PomodoroSession): void {
@@ -1532,7 +1631,8 @@ export class MemosView extends ItemView {
      * 显示番茄钟统计
      */
     private showPomodoroStats(memo: MemoItem): void {
-        const sessions = this.pomodoroManager.getMemoPomodoros(memo.id);
+        const stableMemoId = `${memo.filePath}-${memo.lineNumber}`;
+        const sessions = this.pomodoroManager.getMemoPomodoros(stableMemoId);
         const completed = sessions.filter(s => s.state === 'completed');
         const totalMinutes = completed.reduce((sum, s) => sum + (s.actualMinutes || 0), 0);
 
@@ -1596,25 +1696,23 @@ export class MemosView extends ItemView {
 
         // 清空并重新渲染
         container.empty();
-        container.removeClass('memos-pomodoro-active', 'memos-pomodoro-completed');
+        container.removeClass(
+            'memos-pomodoro-active', 'memos-pomodoro-completed',
+            'memos-pomodoro-short-break', 'memos-pomodoro-long-break'
+        );
 
-        // 获取当前会话状态（可能已经被删除了）
         const currentSession = this.pomodoroManager.getSession(session.memoId);
 
-        if (currentSession && (currentSession.state === 'running' || currentSession.state === 'paused')) {
+        if (currentSession && (currentSession.state === 'short_break' || currentSession.state === 'long_break')) {
+            this.renderPomodoroBreak(container, memo, currentSession);
+        } else if (currentSession && (currentSession.state === 'running' || currentSession.state === 'paused')) {
             this.renderPomodoroActive(container, memo, currentSession);
-        } else if (session.state === 'completed') {
-            const completedCount = this.pomodoroManager.getMemoPomodoros(session.memoId)
-                .filter(s => s.state === 'completed').length;
-            this.renderPomodoroCompleted(container, memo, completedCount);
         } else {
-            // 没有活跃会话，检查是否有完成记录
             const completedCount = this.pomodoroManager.getMemoPomodoros(session.memoId)
                 .filter(s => s.state === 'completed').length;
             if (completedCount > 0) {
                 this.renderPomodoroCompleted(container, memo, completedCount);
             } else {
-                // 没有完成记录也没有活跃会话，移除容器
                 container.remove();
                 this.pomodoroUIElements.delete(session.memoId);
             }

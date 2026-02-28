@@ -32,7 +32,10 @@ export default class MemosPlugin extends Plugin {
         this.pomodoroManager = new PomodoroManager(
             this,
             this.settings.pomodoroDuration,
-            this.settings.pomodoroSoundEnabled
+            this.settings.pomodoroSoundEnabled,
+            this.settings.pomodoroShortBreak,
+            this.settings.pomodoroLongBreak,
+            this.settings.pomodoroLongBreakInterval,
         );
         await this.pomodoroManager.load();
 
@@ -248,7 +251,10 @@ export default class MemosPlugin extends Plugin {
         if (this.pomodoroManager) {
             this.pomodoroManager.updateSettings(
                 this.settings.pomodoroDuration,
-                this.settings.pomodoroSoundEnabled
+                this.settings.pomodoroSoundEnabled,
+                this.settings.pomodoroShortBreak,
+                this.settings.pomodoroLongBreak,
+                this.settings.pomodoroLongBreakInterval,
             );
         }
     }

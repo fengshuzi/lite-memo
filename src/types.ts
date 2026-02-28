@@ -88,6 +88,12 @@ export interface MemosPluginSettings {
     doneListTagName: string;
     /** 番茄钟时长（分钟） */
     pomodoroDuration: number;
+    /** 短休息时长（分钟） */
+    pomodoroShortBreak: number;
+    /** 长休息时长（分钟） */
+    pomodoroLongBreak: number;
+    /** 每多少个番茄后进入长休息 */
+    pomodoroLongBreakInterval: number;
     /** 番茄钟完成时播放提示音 */
     pomodoroSoundEnabled: boolean;
     /** 启用番茄钟功能 */
@@ -124,6 +130,9 @@ export const DEFAULT_SETTINGS: MemosPluginSettings = {
     todoListTagName: 'TODO LIST',
     doneListTagName: 'DONE LIST',
     pomodoroDuration: 25,
+    pomodoroShortBreak: 5,
+    pomodoroLongBreak: 15,
+    pomodoroLongBreakInterval: 4,
     pomodoroSoundEnabled: true,
     enablePomodoro: true,
 };
@@ -216,7 +225,17 @@ export type TaskStatus = 'TODO' | 'DONE' | 'DOING' | 'NOW' | 'LATER' | 'WAITING'
 // ============ 番茄钟相关类型 ============
 
 /** 番茄钟状态 */
-export type PomodoroState = 'idle' | 'running' | 'paused' | 'completed';
+export type PomodoroState = 'idle' | 'running' | 'paused' | 'completed' | 'short_break' | 'long_break';
+
+/** 番茄钟暂停记录 */
+export interface PomodoroPauseRecord {
+    /** 暂停开始时间戳 */
+    pauseStartTime: number;
+    /** 暂停结束时间戳（恢复时） */
+    pauseEndTime?: number;
+    /** 本次暂停时长（秒） */
+    duration?: number;
+}
 
 /** 单个番茄钟会话 */
 export interface PomodoroSession {
@@ -234,10 +253,16 @@ export interface PomodoroSession {
     actualMinutes?: number;
     /** 状态 */
     state: PomodoroState;
-    /** 剩余秒数（运行中/暂停时） */
+    /** 剩余秒数（运行中/暂停时/休息时） */
     remainingSeconds?: number;
     /** 暂停时累积的秒数 */
     pausedAccumulatedSeconds?: number;
+    /** 暂停历史记录 */
+    pauseHistory?: PomodoroPauseRecord[];
+    /** 该 memo 连续完成的番茄数（用于判断长休息） */
+    consecutiveCount?: number;
+    /** 休息时长（分钟），休息阶段使用 */
+    breakMinutes?: number;
 }
 
 /** 番茄钟统计数据 */

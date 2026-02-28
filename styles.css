@@ -1043,3 +1043,46 @@
     align-items: center;
     gap: 4px;
 }
+
+/* 短休息状态 */
+.memos-pomodoro-short-break {
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 3px solid #3b82f6;
+}
+
+/* 长休息状态 */
+.memos-pomodoro-long-break {
+    background: rgba(34, 197, 94, 0.12);
+    border-left: 3px solid #22c55e;
+}
+
+.memos-pomodoro-break-label {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.memos-pomodoro-short-break .memos-pomodoro-break-label {
+    color: #3b82f6;
+}
+
+.memos-pomodoro-long-break .memos-pomodoro-break-label {
+    color: #22c55e;
+}
+
+.memos-pomodoro-break-timer {
+    color: #3b82f6;
+}
+
+.memos-pomodoro-long-break .memos-pomodoro-break-timer {
+    color: #22c55e;
+}
+
+.memos-pomodoro-btn-start-next {
+    color: #e67e22;
+    border-color: #e67e22;
+}
+
+.memos-pomodoro-btn-start-next:hover {
+    background: rgba(230, 126, 34, 0.1);
+}

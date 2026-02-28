@@ -1,63 +1,74 @@
 /**
  * 番茄钟管理器
  * 管理所有番茄钟会话的创建、暂停、恢复、停止和持久化
+ * 支持完整的番茄工作法循环：专注 → 短休息 → 专注 → ... → 长休息
  */
 
 import { Notice } from 'obsidian';
-import { PomodoroSession, PomodoroState, PomodoroStats } from './types';
+import { PomodoroSession, PomodoroState, PomodoroStats, PomodoroPauseRecord } from './types';
 
 /** 番茄钟事件监听器 */
 export interface PomodoroEventListener {
     /** 番茄钟状态变化 */
     onSessionChange?: (session: PomodoroSession) => void;
-    /** 番茄钟完成 */
+    /** 番茄钟完成（专注阶段完成） */
     onSessionComplete?: (session: PomodoroSession) => void;
+    /** 休息开始 */
+    onBreakStart?: (session: PomodoroSession) => void;
+    /** 休息结束 */
+    onBreakEnd?: (session: PomodoroSession) => void;
 }
 
 export class PomodoroManager {
-    /** 所有番茄钟会话，key 为 memoId */
     private sessions: Map<string, PomodoroSession> = new Map();
-
-    /** 所有历史记录（包括已完成） */
     private allSessions: PomodoroSession[] = [];
-
-    /** 定时器引用 */
     private timerInterval: number | null = null;
-
-    /** 事件监听器 */
     private listeners: Set<PomodoroEventListener> = new Set();
-
-    /** 存储路径 */
-    private storagePath: string = 'pomodoro-sessions.json';
-
-    /** 插件实例，用于访问 storage */
     private plugin: any;
 
-    /** 番茄钟时长（分钟） */
     private duration: number = 25;
-
-    /** 是否启用提示音 */
+    private shortBreakDuration: number = 5;
+    private longBreakDuration: number = 15;
+    private longBreakInterval: number = 4;
     private soundEnabled: boolean = true;
 
-    constructor(plugin: any, duration: number = 25, soundEnabled: boolean = true) {
+    /** 每个 memo 的连续完成计数（用于判断长休息），不持久化 */
+    private consecutiveCounts: Map<string, number> = new Map();
+
+    constructor(
+        plugin: any,
+        duration: number = 25,
+        soundEnabled: boolean = true,
+        shortBreak: number = 5,
+        longBreak: number = 15,
+        longBreakInterval: number = 4,
+    ) {
         this.plugin = plugin;
         this.duration = duration;
         this.soundEnabled = soundEnabled;
+        this.shortBreakDuration = shortBreak;
+        this.longBreakDuration = longBreak;
+        this.longBreakInterval = longBreakInterval;
     }
 
     /**
      * 启动番茄钟
      */
     start(memoId: string, duration?: number): PomodoroSession | null {
-        // 检查是否已有运行中的番茄钟
         const existing = this.sessions.get(memoId);
-        if (existing && (existing.state === 'running' || existing.state === 'paused')) {
+
+        // 如果正在休息中，跳过休息直接开始新一轮
+        if (existing && (existing.state === 'short_break' || existing.state === 'long_break')) {
+            this.sessions.delete(memoId);
+        } else if (existing && (existing.state === 'running' || existing.state === 'paused')) {
             new Notice('该 memo 已有运行中的番茄钟');
             return existing;
         }
 
         const sessionId = this.generateId();
         const plannedMinutes = duration || this.duration;
+
+        const consecutiveCount = this.consecutiveCounts.get(memoId) || 0;
 
         const session: PomodoroSession = {
             id: sessionId,
@@ -67,18 +78,15 @@ export class PomodoroManager {
             state: 'running',
             remainingSeconds: plannedMinutes * 60,
             pausedAccumulatedSeconds: 0,
+            pauseHistory: [],
+            consecutiveCount: consecutiveCount,
         };
 
         this.sessions.set(memoId, session);
         this.allSessions.push(session);
 
-        // 启动定时器
         this.startTimer();
-
-        // 保存
         this.save();
-
-        // 触发事件
         this.notifyChange(session);
 
         new Notice(`🍅 番茄钟已启动 (${plannedMinutes}分钟)`);
@@ -87,7 +95,7 @@ export class PomodoroManager {
     }
 
     /**
-     * 暂停番茄钟
+     * 暂停番茄钟（仅专注阶段可暂停）
      */
     pause(sessionId: string): void {
         const session = this.findSession(sessionId);
@@ -99,6 +107,16 @@ export class PomodoroManager {
         }
 
         session.state = 'paused';
+
+        const pauseRecord: PomodoroPauseRecord = {
+            pauseStartTime: Date.now()
+        };
+
+        if (!session.pauseHistory) {
+            session.pauseHistory = [];
+        }
+        session.pauseHistory.push(pauseRecord);
+
         this.save();
         this.notifyChange(session);
 
@@ -117,45 +135,77 @@ export class PomodoroManager {
             return;
         }
 
+        const now = Date.now();
+
+        const currentPause = session.pauseHistory?.find(
+            p => !p.pauseEndTime
+        );
+
+        if (currentPause) {
+            currentPause.pauseEndTime = now;
+            currentPause.duration = Math.floor(
+                (now - currentPause.pauseStartTime) / 1000
+            );
+
+            session.pausedAccumulatedSeconds =
+                (session.pausedAccumulatedSeconds || 0) + currentPause.duration;
+        }
+
         session.state = 'running';
         this.save();
 
-        // 确保定时器正在运行
         this.startTimer();
-
         this.notifyChange(session);
 
         new Notice('▶ 番茄钟已继续');
     }
 
     /**
-     * 停止番茄钟
+     * 停止番茄钟（支持专注阶段和休息阶段）
      */
     stop(sessionId: string, save: boolean = false): void {
         const session = this.findSession(sessionId);
         if (!session) return;
 
         const memoId = session.memoId;
+        const wasBreak = session.state === 'short_break' || session.state === 'long_break';
+
+        if (wasBreak) {
+            // 休息阶段被手动结束，直接清理
+            this.sessions.delete(memoId);
+            this.save();
+            this.notifyChange(session);
+            this.checkAndStopTimer();
+            new Notice('☕ 休息已结束');
+            return;
+        }
 
         if (save) {
-            // 保存为完成状态
+            this.finalizePausedTime(session);
+
             session.state = 'completed';
             session.endTime = Date.now();
-            const elapsedMinutes = Math.round(
-                (session.endTime - session.startTime) / 60000
+
+            const totalElapsedSeconds = Math.floor(
+                (session.endTime - session.startTime) / 1000
             );
-            session.actualMinutes = elapsedMinutes;
-        } else {
-            // 取消不保存
+            const actualSeconds = totalElapsedSeconds - (session.pausedAccumulatedSeconds || 0);
+            session.actualMinutes = Math.max(0, Math.round(actualSeconds / 60));
+
+            const count = (this.consecutiveCounts.get(memoId) || 0) + 1;
+            this.consecutiveCounts.set(memoId, count);
+            session.consecutiveCount = count;
+
+            // 从活跃会话中移除（不进入休息阶段，因为是手动停止）
             this.sessions.delete(memoId);
-            // 从历史记录中移除
+        } else {
+            this.sessions.delete(memoId);
             this.allSessions = this.allSessions.filter(s => s.id !== sessionId);
+            this.consecutiveCounts.delete(memoId);
         }
 
         this.save();
         this.notifyChange(session);
-
-        // 检查是否还有运行中的番茄钟
         this.checkAndStopTimer();
 
         if (save) {
@@ -163,6 +213,32 @@ export class PomodoroManager {
         } else {
             new Notice('🗑 番茄钟已取消');
         }
+    }
+
+    /**
+     * 跳过当前休息阶段
+     */
+    skipBreak(memoId: string): void {
+        const session = this.sessions.get(memoId);
+        if (!session) return;
+
+        if (session.state !== 'short_break' && session.state !== 'long_break') {
+            return;
+        }
+
+        this.sessions.delete(memoId);
+        this.save();
+
+        // 通知 UI 休息结束
+        for (const listener of this.listeners) {
+            if (listener.onBreakEnd) {
+                listener.onBreakEnd(session);
+            }
+        }
+        this.notifyChange(session);
+        this.checkAndStopTimer();
+
+        new Notice('⏭ 休息已跳过');
     }
 
     /**
@@ -180,11 +256,12 @@ export class PomodoroManager {
     }
 
     /**
-     * 获取运行中的番茄钟
+     * 获取运行中的番茄钟（包含休息中的）
      */
     getActivePomodoros(): PomodoroSession[] {
         return Array.from(this.sessions.values()).filter(
             s => s.state === 'running' || s.state === 'paused'
+                || s.state === 'short_break' || s.state === 'long_break'
         );
     }
 
@@ -214,16 +291,10 @@ export class PomodoroManager {
         return stats;
     }
 
-    /**
-     * 添加事件监听器
-     */
     addListener(listener: PomodoroEventListener): void {
         this.listeners.add(listener);
     }
 
-    /**
-     * 移除事件监听器
-     */
     removeListener(listener: PomodoroEventListener): void {
         this.listeners.delete(listener);
     }
@@ -236,6 +307,7 @@ export class PomodoroManager {
             const data = {
                 sessions: Array.from(this.sessions.entries()),
                 allSessions: this.allSessions,
+                consecutiveCounts: Array.from(this.consecutiveCounts.entries()),
             };
             await this.plugin.saveData(data);
         } catch (error) {
@@ -251,14 +323,31 @@ export class PomodoroManager {
             const data = await this.plugin.loadData();
             if (data && data.allSessions) {
                 this.allSessions = data.allSessions;
-                // 恢复运行中的会话（但重置为 paused 状态）
+                for (const session of this.allSessions) {
+                    if (!session.pauseHistory) {
+                        session.pauseHistory = [];
+                    }
+                }
                 if (data.sessions) {
                     for (const [memoId, session] of data.sessions) {
                         const s = session as PomodoroSession;
                         if (s.state === 'running') {
-                            s.state = 'paused'; // 重启后暂停，避免意外计时
+                            s.state = 'paused';
+                        }
+                        // 休息阶段重启后直接清理，不保留
+                        if (s.state === 'short_break' || s.state === 'long_break') {
+                            continue;
+                        }
+                        if (!s.pauseHistory) {
+                            s.pauseHistory = [];
                         }
                         this.sessions.set(memoId, s);
+                    }
+                }
+                // 恢复连续计数
+                if (data.consecutiveCounts) {
+                    for (const [memoId, count] of data.consecutiveCounts) {
+                        this.consecutiveCounts.set(memoId, count as number);
                     }
                 }
             }
@@ -270,57 +359,95 @@ export class PomodoroManager {
     /**
      * 更新设置
      */
-    updateSettings(duration: number, soundEnabled: boolean): void {
+    updateSettings(
+        duration: number,
+        soundEnabled: boolean,
+        shortBreak: number = 5,
+        longBreak: number = 15,
+        longBreakInterval: number = 4,
+    ): void {
         this.duration = duration;
         this.soundEnabled = soundEnabled;
+        this.shortBreakDuration = shortBreak;
+        this.longBreakDuration = longBreak;
+        this.longBreakInterval = longBreakInterval;
     }
 
+    // ============ 定时器与核心循环 ============
+
     /**
-     * 每秒更新（tick）
+     * 每秒更新
      */
     private tick(): void {
-        let hasRunning = false;
-        const now = Date.now();
+        let hasActive = false;
 
         for (const session of this.sessions.values()) {
             if (session.state === 'running') {
-                hasRunning = true;
-
-                if (session.remainingSeconds !== undefined) {
-                    session.remainingSeconds--;
-
-                    // 检查是否完成
-                    if (session.remainingSeconds <= 0) {
-                        this.completeSession(session);
-                    } else {
-                        // 每秒通知更新（用于UI更新）
-                        this.notifyChange(session);
-                    }
-                }
+                hasActive = true;
+                this.tickFocus(session);
+            } else if (session.state === 'short_break' || session.state === 'long_break') {
+                hasActive = true;
+                this.tickBreak(session);
             }
         }
 
-        // 如果没有运行中的番茄钟，停止定时器
-        if (!hasRunning) {
+        if (!hasActive) {
             this.checkAndStopTimer();
         }
     }
 
     /**
-     * 完成番茄钟会话
+     * 专注阶段 tick
+     */
+    private tickFocus(session: PomodoroSession): void {
+        if (session.remainingSeconds === undefined) return;
+
+        session.remainingSeconds--;
+
+        if (session.remainingSeconds <= 0) {
+            this.completeSession(session);
+        } else {
+            this.notifyChange(session);
+        }
+    }
+
+    /**
+     * 休息阶段 tick
+     */
+    private tickBreak(session: PomodoroSession): void {
+        if (session.remainingSeconds === undefined) return;
+
+        session.remainingSeconds--;
+
+        if (session.remainingSeconds <= 0) {
+            this.completeBreak(session);
+        } else {
+            this.notifyChange(session);
+        }
+    }
+
+    /**
+     * 专注阶段自然完成 → 自动进入休息
      */
     private completeSession(session: PomodoroSession): void {
         session.state = 'completed';
         session.endTime = Date.now();
-        const elapsedMinutes = Math.round(
-            (session.endTime - session.startTime) / 60000
-        );
-        session.actualMinutes = elapsedMinutes;
 
-        // 播放提示音
+        const totalElapsedSeconds = Math.floor(
+            (session.endTime - session.startTime) / 1000
+        );
+        const actualSeconds = totalElapsedSeconds - (session.pausedAccumulatedSeconds || 0);
+        session.actualMinutes = Math.max(0, Math.round(actualSeconds / 60));
+
         if (this.soundEnabled) {
             this.playNotificationSound();
         }
+
+        // 更新连续计数
+        const memoId = session.memoId;
+        const count = (this.consecutiveCounts.get(memoId) || 0) + 1;
+        this.consecutiveCounts.set(memoId, count);
+        session.consecutiveCount = count;
 
         // 触发完成事件
         for (const listener of this.listeners) {
@@ -329,27 +456,85 @@ export class PomodoroManager {
             }
         }
 
-        // 触发变化事件
-        this.notifyChange(session);
-
-        // 保存
+        // 从活跃 sessions 中移除已完成的专注会话
+        this.sessions.delete(memoId);
         this.save();
 
-        // 移除会话
-        this.sessions.delete(session.memoId);
-
-        // 检查是否还有运行中的番茄钟
-        this.checkAndStopTimer();
-
-        new Notice('🎉 番茄钟完成！休息一下吧');
+        // 自动进入休息阶段
+        this.startBreak(memoId, count);
     }
 
     /**
-     * 启动定时器
+     * 开始休息阶段
      */
+    private startBreak(memoId: string, completedCount: number): void {
+        const isLongBreak = completedCount > 0 && completedCount % this.longBreakInterval === 0;
+        const breakMinutes = isLongBreak ? this.longBreakDuration : this.shortBreakDuration;
+        const breakState: PomodoroState = isLongBreak ? 'long_break' : 'short_break';
+
+        const breakSession: PomodoroSession = {
+            id: this.generateId(),
+            memoId: memoId,
+            startTime: Date.now(),
+            plannedMinutes: breakMinutes,
+            state: breakState,
+            remainingSeconds: breakMinutes * 60,
+            breakMinutes: breakMinutes,
+            consecutiveCount: completedCount,
+        };
+
+        this.sessions.set(memoId, breakSession);
+
+        this.startTimer();
+
+        // 触发休息开始事件
+        for (const listener of this.listeners) {
+            if (listener.onBreakStart) {
+                listener.onBreakStart(breakSession);
+            }
+        }
+        this.notifyChange(breakSession);
+        this.save();
+
+        if (isLongBreak) {
+            new Notice(`🌿 第 ${completedCount} 个番茄完成！长休息 ${breakMinutes} 分钟`);
+            // 长休息后重置连续计数
+            this.consecutiveCounts.set(memoId, 0);
+        } else {
+            new Notice(`☕ 番茄钟完成！短休息 ${breakMinutes} 分钟`);
+        }
+    }
+
+    /**
+     * 休息阶段自然完成
+     */
+    private completeBreak(session: PomodoroSession): void {
+        const memoId = session.memoId;
+
+        if (this.soundEnabled) {
+            this.playBreakEndSound();
+        }
+
+        this.sessions.delete(memoId);
+        this.save();
+
+        // 触发休息结束事件
+        for (const listener of this.listeners) {
+            if (listener.onBreakEnd) {
+                listener.onBreakEnd(session);
+            }
+        }
+        this.notifyChange(session);
+        this.checkAndStopTimer();
+
+        new Notice('⏰ 休息结束！准备开始下一个番茄吧');
+    }
+
+    // ============ 定时器管理 ============
+
     private startTimer(): void {
         if (this.timerInterval !== null) {
-            return; // 定时器已在运行
+            return;
         }
 
         this.timerInterval = window.setInterval(() => {
@@ -357,23 +542,19 @@ export class PomodoroManager {
         }, 1000);
     }
 
-    /**
-     * 检查并停止定时器
-     */
     private checkAndStopTimer(): void {
-        const hasRunning = Array.from(this.sessions.values()).some(
-            s => s.state === 'running'
+        const hasActive = Array.from(this.sessions.values()).some(
+            s => s.state === 'running' || s.state === 'short_break' || s.state === 'long_break'
         );
 
-        if (!hasRunning && this.timerInterval !== null) {
+        if (!hasActive && this.timerInterval !== null) {
             window.clearInterval(this.timerInterval);
             this.timerInterval = null;
         }
     }
 
-    /**
-     * 通知所有监听器
-     */
+    // ============ 工具方法 ============
+
     private notifyChange(session: PomodoroSession): void {
         for (const listener of this.listeners) {
             if (listener.onSessionChange) {
@@ -382,25 +563,37 @@ export class PomodoroManager {
         }
     }
 
-    /**
-     * 查找会话
-     */
     private findSession(sessionId: string): PomodoroSession | undefined {
+        // 先从活跃 sessions 中找（休息 session 不在 allSessions 中）
+        for (const session of this.sessions.values()) {
+            if (session.id === sessionId) return session;
+        }
         return this.allSessions.find(s => s.id === sessionId);
     }
 
-    /**
-     * 生成唯一ID
-     */
+    private finalizePausedTime(session: PomodoroSession): void {
+        if (session.state === 'paused' && session.pauseHistory) {
+            const currentPause = session.pauseHistory.find(p => !p.pauseEndTime);
+            if (currentPause) {
+                const now = Date.now();
+                currentPause.pauseEndTime = now;
+                currentPause.duration = Math.floor(
+                    (now - currentPause.pauseStartTime) / 1000
+                );
+                session.pausedAccumulatedSeconds =
+                    (session.pausedAccumulatedSeconds || 0) + currentPause.duration;
+            }
+        }
+    }
+
     private generateId(): string {
         return `pomodoro-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     }
 
     /**
-     * 播放提示音
+     * 专注完成提示音（较高频率，积极感）
      */
     private playNotificationSound(): void {
-        // 使用浏览器的 Audio API 播放简单的提示音
         try {
             const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
             const oscillator = audioContext.createOscillator();
@@ -426,8 +619,32 @@ export class PomodoroManager {
     }
 
     /**
-     * 清理资源
+     * 休息结束提示音（两声短促音，提醒回来工作）
      */
+    private playBreakEndSound(): void {
+        try {
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+            const playBeep = (startTime: number, freq: number) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.value = freq;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.25, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+                osc.start(startTime);
+                osc.stop(startTime + 0.3);
+            };
+
+            playBeep(audioContext.currentTime, 600);
+            playBeep(audioContext.currentTime + 0.4, 800);
+        } catch (error) {
+            console.error('Failed to play break end sound:', error);
+        }
+    }
+
     dispose(): void {
         if (this.timerInterval !== null) {
             window.clearInterval(this.timerInterval);
