@@ -976,7 +976,8 @@ export class MemosView extends ItemView {
                         console.log('启动番茄钟，stableMemoId:', stableMemoId);
 
                         setTimeout(() => {
-                            this.pomodoroManager.start(stableMemoId);
+                            // 用切换前的原始内容，避免 DOING 行中包含 <!-- ts:... --> 注释
+                            this.pomodoroManager.start(stableMemoId, undefined, memo.content);
                         }, 200);
                     }
                 }
@@ -1283,28 +1284,42 @@ export class MemosView extends ItemView {
 
                 const durationStr = formatDuration(durationSeconds);
                 const taskText = removeTimeComment(content).trim();
-                
+
+                // 计算番茄统计：已完成数 + 当前正在运行/暂停的会话（即将被停止保存的这一个）
+                let pomodoroStr = '';
+                if (memoId && this.settings.enablePomodoro) {
+                    const completedCount = this.pomodoroManager.getMemoPomodoros(memoId)
+                        .filter(s => s.state === 'completed').length;
+                    const activeSession = this.pomodoroManager.getSession(memoId);
+                    const hasActive = activeSession &&
+                        (activeSession.state === 'running' || activeSession.state === 'paused');
+                    const totalCount = completedCount + (hasActive ? 1 : 0);
+                    if (totalCount > 0) {
+                        pomodoroStr = ' ' + '🍅'.repeat(totalCount);
+                    }
+                }
+
                 if (trackingInfo.source === 'checkbox') {
                     // 返回 [x]，根据配置决定是否追加时长
                     if (this.settings.autoAppendDuration) {
                         return timeStr 
-                            ? `- [x] ${timeStr} ${taskText} ${durationStr}`
-                            : `- [x] ${taskText} ${durationStr}`;
+                            ? `- [x] ${timeStr} ${taskText} ${durationStr}${pomodoroStr}`
+                            : `- [x] ${taskText} ${durationStr}${pomodoroStr}`;
                     } else {
                         return timeStr 
-                            ? `- [x] ${timeStr} ${taskText}`
-                            : `- [x] ${taskText}`;
+                            ? `- [x] ${timeStr} ${taskText}${pomodoroStr}`
+                            : `- [x] ${taskText}${pomodoroStr}`;
                     }
                 } else {
                     // 返回 DONE，根据配置决定是否追加时长
                     if (this.settings.autoAppendDuration) {
                         return timeStr
-                            ? `- DONE ${timeStr} ${taskText} ${durationStr}`
-                            : `- DONE ${taskText} ${durationStr}`;
+                            ? `- DONE ${timeStr} ${taskText} ${durationStr}${pomodoroStr}`
+                            : `- DONE ${taskText} ${durationStr}${pomodoroStr}`;
                     } else {
                         return timeStr
-                            ? `- DONE ${timeStr} ${taskText}`
-                            : `- DONE ${taskText}`;
+                            ? `- DONE ${timeStr} ${taskText}${pomodoroStr}`
+                            : `- DONE ${taskText}${pomodoroStr}`;
                     }
                 }
             } else {
@@ -1313,9 +1328,12 @@ export class MemosView extends ItemView {
             }
             
         } else if (doneMatch) {
-            // DONE → 普通列表
+            // DONE → 普通列表：同时清除时长和番茄统计后缀
             const [, , timeStr, content] = doneMatch;
-            const taskText = content.replace(/\s+\d+(秒|分钟|小时)$/, '').trim();
+            const taskText = content
+                .replace(/\s+🍅+$/, '')
+                .replace(/\s+\d+(秒|分钟|小时)$/, '')
+                .trim();
             return timeStr ? `- ${timeStr} ${taskText}` : `- ${taskText}`;
         }
 
@@ -1630,7 +1648,7 @@ export class MemosView extends ItemView {
             e.stopPropagation();
             // 使用稳定的 memoId：filePath-lineNumber
             const stableMemoId = `${memo.filePath}-${memo.lineNumber}`;
-            this.pomodoroManager.start(stableMemoId);
+            this.pomodoroManager.start(stableMemoId, undefined, memo.content);
         });
     }
 
@@ -1708,7 +1726,7 @@ export class MemosView extends ItemView {
             startBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const stableMemoId = `${memo.filePath}-${memo.lineNumber}`;
-                this.pomodoroManager.start(stableMemoId);
+                this.pomodoroManager.start(stableMemoId, undefined, memo.content);
             });
         }
     }
@@ -1748,7 +1766,7 @@ export class MemosView extends ItemView {
         startNextBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const stableMemoId = `${memo.filePath}-${memo.lineNumber}`;
-            this.pomodoroManager.start(stableMemoId);
+            this.pomodoroManager.start(stableMemoId, undefined, memo.content);
         });
     }
 

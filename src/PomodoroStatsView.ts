@@ -68,6 +68,8 @@ export class PomodoroStatsView extends ItemView {
         const todayGrid = todayRow.createDiv({ cls: 'pomo-stats-grid' });
         this.createStatCard(todayGrid, '🍅', `${stats.todayPomodoros}`, '个番茄');
         this.createStatCard(todayGrid, '⏱', `${stats.todayFocusMinutes}`, '分钟专注');
+        this.createStatCard(todayGrid, '☕', `${stats.todayBreaks}`, '次休息');
+        this.createStatCard(todayGrid, '💤', `${stats.todayBreakMinutes}`, '分钟休息');
 
         // 总计
         const totalRow = statsSection.createDiv({ cls: 'pomo-stats-row' });
@@ -75,6 +77,8 @@ export class PomodoroStatsView extends ItemView {
         const totalGrid = totalRow.createDiv({ cls: 'pomo-stats-grid' });
         this.createStatCard(totalGrid, '🍅', `${stats.totalPomodoros}`, '个番茄');
         this.createStatCard(totalGrid, '⏱', `${stats.totalFocusMinutes}`, '分钟专注');
+        this.createStatCard(totalGrid, '☕', `${stats.totalBreaks}`, '次休息');
+        this.createStatCard(totalGrid, '💤', `${stats.totalBreakMinutes}`, '分钟休息');
         const avgMinutes = stats.totalPomodoros > 0
             ? Math.round(stats.totalFocusMinutes / stats.totalPomodoros)
             : 0;
@@ -221,7 +225,8 @@ export class PomodoroStatsView extends ItemView {
     }
 
     private renderSessionRow(parent: HTMLElement, session: PomodoroSession): void {
-        const row = parent.createDiv({ cls: 'pomo-session-row' });
+        const isBreak = session.sessionType === 'break';
+        const row = parent.createDiv({ cls: `pomo-session-row${isBreak ? ' pomo-session-break' : ''}` });
 
         // 复选框
         const cb = row.createEl('input', { type: 'checkbox' }) as HTMLInputElement;
@@ -242,23 +247,33 @@ export class PomodoroStatsView extends ItemView {
         const timeStr = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
         timeEl.setText(`${dateStr} ${timeStr}`);
 
-        // 关联任务 memoId
+        // 关联任务：优先显示 memoContent，没有则降级显示文件:行号
         const memoEl = row.createSpan({ cls: 'pomo-col-memo' });
-        const memoId = session.memoId;
-        const lastDash = memoId.lastIndexOf('-');
-        if (lastDash !== -1) {
-            const file = memoId.substring(0, lastDash);
-            const line = memoId.substring(lastDash + 1);
-            const shortFile = file.split('/').pop() || file;
-            memoEl.setText(`${shortFile}:${line}`);
-            memoEl.setAttribute('title', memoId);
+        if (session.memoContent) {
+            const maxLen = 30;
+            const display = session.memoContent.length > maxLen
+                ? session.memoContent.slice(0, maxLen) + '…'
+                : session.memoContent;
+            memoEl.setText(display);
+            memoEl.setAttribute('title', session.memoContent);
         } else {
-            memoEl.setText(memoId);
+            const memoId = session.memoId;
+            const lastDash = memoId.lastIndexOf('-');
+            if (lastDash !== -1) {
+                const file = memoId.substring(0, lastDash);
+                const line = memoId.substring(lastDash + 1);
+                const shortFile = file.split('/').pop() || file;
+                memoEl.setText(`${shortFile}:${line}`);
+                memoEl.setAttribute('title', memoId);
+            } else {
+                memoEl.setText(memoId);
+            }
         }
 
         // 时长
         const durEl = row.createSpan({ cls: 'pomo-col-duration' });
-        if (session.state === 'completed' && session.actualMinutes !== undefined) {
+        const hasEnded = session.state === 'completed' || (isBreak && session.endTime);
+        if (hasEnded && session.actualMinutes !== undefined) {
             durEl.setText(`${session.actualMinutes} 分钟`);
         } else if (session.plannedMinutes) {
             durEl.setText(`${session.plannedMinutes} 分钟(计划)`);
@@ -268,17 +283,33 @@ export class PomodoroStatsView extends ItemView {
 
         // 状态
         const stateEl = row.createSpan({ cls: 'pomo-col-state' });
-        const stateMap: Record<string, { text: string; cls: string }> = {
-            'completed': { text: '✅ 完成', cls: 'pomo-state-completed' },
-            'running': { text: '🍅 运行中', cls: 'pomo-state-running' },
-            'paused': { text: '⏸ 暂停', cls: 'pomo-state-paused' },
-            'idle': { text: '⏹ 空闲', cls: 'pomo-state-idle' },
-            'short_break': { text: '☕ 短休息', cls: 'pomo-state-break' },
-            'long_break': { text: '🌿 长休息', cls: 'pomo-state-break' },
-        };
-        const stateInfo = stateMap[session.state] || { text: session.state, cls: '' };
-        const badge = stateEl.createSpan({ cls: `pomo-state-badge ${stateInfo.cls}` });
-        badge.setText(stateInfo.text);
+        let stateText: string;
+        let stateCls: string;
+        if (isBreak) {
+            const breakLabel = session.state === 'long_break' ? '长休息' : '短休息';
+            if (session.skipped) {
+                stateText = `⏭ ${breakLabel}(跳过)`;
+                stateCls = 'pomo-state-skipped';
+            } else if (session.endTime) {
+                stateText = `✅ ${breakLabel}`;
+                stateCls = 'pomo-state-break-done';
+            } else {
+                stateText = `☕ ${breakLabel}中`;
+                stateCls = 'pomo-state-break';
+            }
+        } else {
+            const stateMap: Record<string, { text: string; cls: string }> = {
+                'completed': { text: '✅ 完成', cls: 'pomo-state-completed' },
+                'running': { text: '🍅 运行中', cls: 'pomo-state-running' },
+                'paused': { text: '⏸ 暂停', cls: 'pomo-state-paused' },
+                'idle': { text: '⏹ 空闲', cls: 'pomo-state-idle' },
+            };
+            const info = stateMap[session.state] || { text: session.state, cls: '' };
+            stateText = info.text;
+            stateCls = info.cls;
+        }
+        const badge = stateEl.createSpan({ cls: `pomo-state-badge ${stateCls}` });
+        badge.setText(stateText);
 
         // 操作
         const actionEl = row.createSpan({ cls: 'pomo-col-action' });

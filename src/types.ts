@@ -266,6 +266,12 @@ export interface PomodoroSession {
     id: string;
     /** stableMemoId 格式：`${filePath}-${lineNumber}`，关联到具体 memo */
     memoId: string;
+    /** 关联任务的内容摘要，启动时传入，用于统计面板展示 */
+    memoContent?: string;
+    /** 会话类型：focus=专注，break=休息（short/long 用 state 区分） */
+    sessionType?: 'focus' | 'break';
+    /** 休息是否被手动跳过/提前结束 */
+    skipped?: boolean;
     /** 专注/休息开始的时间戳 (Date.now()) */
     startTime: number;
     /** 专注完成时回填 */
@@ -297,6 +303,14 @@ export interface PomodoroStats {
     todayPomodoros: number;
     /** 今日专注时长（分钟） */
     todayFocusMinutes: number;
+    /** 今日休息次数 */
+    todayBreaks: number;
+    /** 今日休息时长（分钟） */
+    todayBreakMinutes: number;
+    /** 总休息次数 */
+    totalBreaks: number;
+    /** 总休息时长（分钟） */
+    totalBreakMinutes: number;
     /** 按标签分组的统计 */
     byTag: { [tag: string]: { count: number; minutes: number } };
 }

@@ -82,8 +82,10 @@ export class PomodoroManager {
     /**
      * 启动番茄钟
      * @param memoId stableMemoId 格式：`${filePath}-${lineNumber}`
+     * @param duration 可选自定义时长（分钟）
+     * @param memoContent 关联任务的内容摘要，用于统计面板展示
      */
-    start(memoId: string, duration?: number): PomodoroSession | null {
+    start(memoId: string, duration?: number, memoContent?: string): PomodoroSession | null {
         const existing = this.sessions.get(memoId);
 
         // 如果正在休息中，跳过休息直接开始新一轮
@@ -102,6 +104,8 @@ export class PomodoroManager {
         const session: PomodoroSession = {
             id: sessionId,
             memoId: memoId,
+            memoContent: memoContent,
+            sessionType: 'focus',
             startTime: Date.now(),
             plannedMinutes: plannedMinutes,
             state: 'running',
@@ -201,7 +205,16 @@ export class PomodoroManager {
         const wasBreak = session.state === 'short_break' || session.state === 'long_break';
 
         if (wasBreak) {
-            // 休息阶段被手动结束，直接清理
+            // 休息阶段被手动结束：更新历史记录后清理
+            session.endTime = Date.now();
+            session.skipped = true;
+            session.actualMinutes = Math.max(0, Math.round(
+                (session.endTime - session.startTime) / 60000
+            ));
+            // 若已在 allSessions 中则直接更新，否则推入（兼容旧数据）
+            if (!this.allSessions.find(s => s.id === session.id)) {
+                this.allSessions.push(session);
+            }
             this.sessions.delete(memoId);
             this.save();
             this.notifyChange(session);
@@ -267,6 +280,15 @@ export class PomodoroManager {
             return;
         }
 
+        session.endTime = Date.now();
+        session.skipped = true;
+        session.actualMinutes = Math.max(0, Math.round(
+            (session.endTime - session.startTime) / 60000
+        ));
+        if (!this.allSessions.find(s => s.id === session.id)) {
+            this.allSessions.push(session);
+        }
+
         this.sessions.delete(memoId);
         this.save();
 
@@ -330,23 +352,32 @@ export class PomodoroManager {
         this.save();
     }
 
-    /** 获取汇总统计（今日/全部的番茄数和专注时长） */
+    /** 获取汇总统计（今日/全部的番茄数、专注时长、休息时长） */
     getStats(): PomodoroStats {
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
-        const todaySessions = this.allSessions.filter(s => {
-            return s.state === 'completed' && s.startTime >= todayStart;
-        });
+        const isFocus = (s: PomodoroSession) =>
+            s.sessionType === 'focus' || !s.sessionType; // 兼容旧数据（无 sessionType 字段）
+        const isBreak = (s: PomodoroSession) => s.sessionType === 'break';
+        const isEnded = (s: PomodoroSession) =>
+            s.state === 'completed' || (s.sessionType === 'break' && !!s.endTime);
+
+        const focusDone = this.allSessions.filter(s => isFocus(s) && s.state === 'completed');
+        const breakDone = this.allSessions.filter(s => isBreak(s) && isEnded(s));
 
         const stats: PomodoroStats = {
-            totalPomodoros: this.allSessions.filter(s => s.state === 'completed').length,
-            totalFocusMinutes: this.allSessions
-                .filter(s => s.state === 'completed' && s.actualMinutes)
+            totalPomodoros: focusDone.length,
+            totalFocusMinutes: focusDone.reduce((sum, s) => sum + (s.actualMinutes || 0), 0),
+            todayPomodoros: focusDone.filter(s => s.startTime >= todayStart).length,
+            todayFocusMinutes: focusDone
+                .filter(s => s.startTime >= todayStart)
                 .reduce((sum, s) => sum + (s.actualMinutes || 0), 0),
-            todayPomodoros: todaySessions.length,
-            todayFocusMinutes: todaySessions
-                .filter(s => s.actualMinutes)
+            totalBreaks: breakDone.length,
+            totalBreakMinutes: breakDone.reduce((sum, s) => sum + (s.actualMinutes || 0), 0),
+            todayBreaks: breakDone.filter(s => s.startTime >= todayStart).length,
+            todayBreakMinutes: breakDone
+                .filter(s => s.startTime >= todayStart)
                 .reduce((sum, s) => sum + (s.actualMinutes || 0), 0),
             byTag: {},
         };
@@ -609,9 +640,16 @@ export class PomodoroManager {
         const breakMinutes = isLongBreak ? this.longBreakDuration : this.shortBreakDuration;
         const breakState: PomodoroState = isLongBreak ? 'long_break' : 'short_break';
 
+        // 继承关联专注会话的 memoContent，让统计面板能显示任务名
+        const focusSession = this.allSessions
+            .filter(s => s.memoId === memoId && s.sessionType === 'focus')
+            .at(-1);
+
         const breakSession: PomodoroSession = {
             id: this.generateId(),
             memoId: memoId,
+            memoContent: focusSession?.memoContent,
+            sessionType: 'break',
             startTime: Date.now(),
             plannedMinutes: breakMinutes,
             state: breakState,
@@ -621,6 +659,7 @@ export class PomodoroManager {
         };
 
         this.sessions.set(memoId, breakSession);
+        this.allSessions.push(breakSession);
 
         this.startTimer();
 
@@ -650,6 +689,16 @@ export class PomodoroManager {
 
         if (this.soundEnabled) {
             this.playBreakEndSound();
+        }
+
+        session.endTime = Date.now();
+        session.actualMinutes = Math.max(0, Math.round(
+            (session.endTime - session.startTime) / 60000
+        ));
+        // state 保持 short_break/long_break，但已有 endTime 可区分是否结束
+        // 若已在 allSessions 中则引用相同对象，直接修改即可；否则补推（兼容旧数据）
+        if (!this.allSessions.find(s => s.id === session.id)) {
+            this.allSessions.push(session);
         }
 
         this.sessions.delete(memoId);

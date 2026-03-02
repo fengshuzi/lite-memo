@@ -1328,7 +1328,7 @@
 }
 
 .pomo-col-time {
-    flex: 0 0 90px;
+    flex: 0 0 80px;
     font-family: var(--font-monospace);
     font-size: 11px;
     color: var(--text-muted);
@@ -1336,6 +1336,7 @@
 
 .pomo-col-memo {
     flex: 1;
+    min-width: 60px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1343,14 +1344,14 @@
 }
 
 .pomo-col-duration {
-    flex: 0 0 70px;
+    flex: 0 0 55px;
     font-size: 12px;
     text-align: right;
     color: var(--text-muted);
 }
 
 .pomo-col-state {
-    flex: 0 0 70px;
+    flex: 0 0 60px;
     text-align: center;
 }
 

@@ -278,7 +278,10 @@ export default class MemosPlugin extends Plugin {
     private getActiveMemosView(): MemosView | null {
         const leaves = this.app.workspace.getLeavesOfType(MEMOS_VIEW_TYPE);
         if (leaves.length > 0) {
-            return leaves[0].view as MemosView;
+            const view = leaves[0].view;
+            if (view instanceof MemosView) {
+                return view;
+            }
         }
         return null;
     }
