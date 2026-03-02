@@ -1293,37 +1293,53 @@ export class MemosView extends ItemView {
                 const durationStr = formatDuration(durationSeconds);
                 const taskText = removeTimeComment(content).trim();
 
-                // 计算番茄统计：已完成数 + 当前正在运行/暂停的会话（即将被停止保存的这一个）
+                // 计算番茄(🍅)和休息(🥔)数量
+                // 格式：任务内容 🍅🍅🥔 时长  （番茄土豆在时长前面）
                 let pomodoroStr = '';
                 if (memoId && this.settings.enablePomodoro) {
-                    const completedCount = this.pomodoroManager.getMemoPomodoros(memoId)
-                        .filter(s => s.state === 'completed').length;
+                    const allPomodoros = this.pomodoroManager.getMemoPomodoros(memoId);
                     const activeSession = this.pomodoroManager.getSession(memoId);
-                    const hasActive = activeSession &&
+
+                    // 专注：已完成 + 当前运行/暂停（即将被保存）
+                    const focusDone = allPomodoros.filter(
+                        s => s.state === 'completed' && (s.sessionType === 'focus' || !s.sessionType)
+                    ).length;
+                    const hasActiveFocus = activeSession &&
                         (activeSession.state === 'running' || activeSession.state === 'paused');
-                    const totalCount = completedCount + (hasActive ? 1 : 0);
-                    if (totalCount > 0) {
-                        pomodoroStr = ' ' + '🍅'.repeat(totalCount);
+                    const focusCount = focusDone + (hasActiveFocus ? 1 : 0);
+
+                    // 休息：已结束（有 endTime）+ 当前正在休息中（即将被跳过）
+                    const breakDone = allPomodoros.filter(
+                        s => s.sessionType === 'break' && s.endTime
+                    ).length;
+                    const hasActiveBreak = activeSession &&
+                        (activeSession.state === 'short_break' || activeSession.state === 'long_break');
+                    const breakCount = breakDone + (hasActiveBreak ? 1 : 0);
+
+                    const focusPart = focusCount > 0 ? '🍅'.repeat(focusCount) : '';
+                    const breakPart = breakCount > 0 ? '🥔'.repeat(breakCount) : '';
+                    if (focusPart || breakPart) {
+                        pomodoroStr = ` ${focusPart}${breakPart}`;
                     }
                 }
 
                 if (trackingInfo.source === 'checkbox') {
-                    // 返回 [x]，根据配置决定是否追加时长
+                    // 返回 [x]，根据配置决定是否追加时长；番茄土豆在时长前面
                     if (this.settings.autoAppendDuration) {
-                        return timeStr 
-                            ? `- [x] ${timeStr} ${taskText} ${durationStr}${pomodoroStr}`
-                            : `- [x] ${taskText} ${durationStr}${pomodoroStr}`;
+                        return timeStr
+                            ? `- [x] ${timeStr} ${taskText}${pomodoroStr} ${durationStr}`
+                            : `- [x] ${taskText}${pomodoroStr} ${durationStr}`;
                     } else {
-                        return timeStr 
+                        return timeStr
                             ? `- [x] ${timeStr} ${taskText}${pomodoroStr}`
                             : `- [x] ${taskText}${pomodoroStr}`;
                     }
                 } else {
-                    // 返回 DONE，根据配置决定是否追加时长
+                    // 返回 DONE，根据配置决定是否追加时长；番茄土豆在时长前面
                     if (this.settings.autoAppendDuration) {
                         return timeStr
-                            ? `- DONE ${timeStr} ${taskText} ${durationStr}${pomodoroStr}`
-                            : `- DONE ${taskText} ${durationStr}${pomodoroStr}`;
+                            ? `- DONE ${timeStr} ${taskText}${pomodoroStr} ${durationStr}`
+                            : `- DONE ${taskText}${pomodoroStr} ${durationStr}`;
                     } else {
                         return timeStr
                             ? `- DONE ${timeStr} ${taskText}${pomodoroStr}`
@@ -1336,11 +1352,11 @@ export class MemosView extends ItemView {
             }
             
         } else if (doneMatch) {
-            // DONE → 普通列表：同时清除时长和番茄统计后缀
+            // DONE → 普通列表：清除时长、🍅、🥔 后缀（顺序：先时长，再番茄土豆）
             const [, , timeStr, content] = doneMatch;
             const taskText = content
-                .replace(/\s+🍅+$/, '')
                 .replace(/\s+\d+(秒|分钟|小时)$/, '')
+                .replace(/\s+[🍅🥔]+$/, '')
                 .trim();
             return timeStr ? `- ${timeStr} ${taskText}` : `- ${taskText}`;
         }
