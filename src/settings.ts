@@ -376,5 +376,12 @@ export class MemosSettingTab extends PluginSettingTab {
             text: '所有闪念都存储在 journals 文件夹的日期文件中，与 Logseq 格式兼容。',
             cls: 'setting-item-description'
         });
+
+        const donateSection = containerEl.createDiv({ cls: 'plugin-donate-section' });
+        donateSection.createEl('h3', { text: '☕ 请作者喝杯咖啡' });
+        donateSection.createEl('p', { text: '如果这个插件帮助了你，欢迎请作者喝杯咖啡 ☕', cls: 'plugin-donate-desc' });
+        const imgWrap = donateSection.createDiv({ cls: 'plugin-donate-qr' });
+        imgWrap.createEl('img', { attr: { src: this.plugin.app.vault.adapter.getResourcePath(`${this.plugin.manifest.dir}/assets/wechat-donate.jpg`), alt: '微信打赏', width: '160' } });
+        imgWrap.createEl('p', { text: '微信扫码', cls: 'plugin-donate-label' });
     }
 }
