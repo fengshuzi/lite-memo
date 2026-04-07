@@ -451,7 +451,8 @@ export class MemosView extends ItemView {
                 }
             } else {
                 // 新建模式
-                const memo = await this.storage.saveMemo(content, tags);
+                const isTask = !!this.currentFilter.taskListMode;
+                const memo = await this.storage.saveMemo(content, tags, isTask);
                 success = !!memo;
                 if (success) {
                     new Notice('✨ 闪念已记录');
@@ -990,23 +991,30 @@ export class MemosView extends ItemView {
                     }
                 }
 
-                // 如果启用了番茄钟，且任务从 DOING 变成 DONE/CANCELLED，自动停止并保存番茄钟
+                // 如果启用了番茄钟，且任务变成 DONE/CANCELLED，自动停止并保存番茄钟
+                // 不限制 oldStatus === 'DOING'，因为用户可能在 TODO LIST 视图直接勾选完成
                 if (this.settings.enablePomodoro &&
-                    (updatedMemo.taskStatus === 'DONE' || updatedMemo.taskStatus === 'CANCELLED') &&
-                    oldStatus === 'DOING') {
+                    (updatedMemo.taskStatus === 'DONE' || updatedMemo.taskStatus === 'CANCELLED' ||
+                     updatedMemo.taskStatus === 'CHECKBOX_CHECKED')) {
                     const stableMemoId = `${updatedMemo.filePath}-${updatedMemo.lineNumber}`;
                     const session = this.pomodoroManager.getSession(stableMemoId);
 
                     if (session && (session.state === 'short_break' || session.state === 'long_break')) {
                         setTimeout(() => {
                             this.pomodoroManager.skipBreak(stableMemoId);
+                            // 番茄钟处理完后再移除卡片
+                            this.removeCardFromTodoList(updatedMemo);
                         }, 200);
                     } else if (session && (session.state === 'running' || session.state === 'paused')) {
                         console.log('任务完成，停止番茄钟，stableMemoId:', stableMemoId);
-
                         setTimeout(() => {
                             this.pomodoroManager.stop(session.id, true);
+                            // 番茄钟处理完后再移除卡片
+                            this.removeCardFromTodoList(updatedMemo);
                         }, 200);
+                    } else {
+                        // 没有活跃番茄钟，直接移除
+                        this.removeCardFromTodoList(updatedMemo);
                     }
                 }
             }
@@ -1179,6 +1187,24 @@ export class MemosView extends ItemView {
 
         // 替换旧卡片
         card.replaceWith(newCard);
+    }
+
+    /**
+     * 在 TODO LIST 视图下，将已完成任务的卡片从 DOM 和 displayedMemos 中移除。
+     * 必须在番茄钟停止之后调用，确保统计数据已保存。
+     */
+    private removeCardFromTodoList(memo: MemoItem): void {
+        if (this.currentFilter.taskListMode !== 'todo') return;
+
+        const card = this.memosList?.querySelector(`[data-memo-id="${memo.id}"]`) as HTMLElement;
+        if (card) card.remove();
+
+        const idx = this.displayedMemos.findIndex(m => m.id === memo.id);
+        if (idx !== -1) this.displayedMemos.splice(idx, 1);
+
+        if (this.displayedMemos.length === 0) {
+            this.showEmptyState();
+        }
     }
 
     /**
@@ -1543,11 +1569,14 @@ export class MemosView extends ItemView {
      * 打开输入弹窗
      */
     private openInputModal(): void {
+        const isTask = !!this.currentFilter.taskListMode;
         const modal = new MemoInputModal(
             this.app,
             this.storage,
             this.settings,
-            () => this.refresh()
+            () => this.refresh(),
+            undefined,
+            isTask
         );
         modal.open();
     }
@@ -1903,6 +1932,8 @@ export class MemosView extends ItemView {
         );
 
         if (!memo) {
+            // memo 不在当前视图（如 TODO LIST 下任务已完成被移除）
+            // 数据已由 stop() 保存，UI 无需更新，静默跳过
             return;
         }
 

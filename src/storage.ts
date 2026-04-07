@@ -45,20 +45,21 @@ export class MemosStorage {
     /**
      * 保存闪念笔记
      */
-    async saveMemo(content: string, tags: string[] = []): Promise<MemoItem | null> {
+    async saveMemo(content: string, tags: string[] = [], isTask: boolean = false): Promise<MemoItem | null> {
         const now = new Date();
         const timeString = formatTime(now);
         const dateString = formatDate(now, this.settings.dateFormat);
         const journalPath = `${this.settings.journalFolder}/${getJournalFileName(now, this.settings.dateFormat)}`;
 
         // 构建闪念文本
-        let memoText = `- ${timeString} ${content}`;
-        
+        const taskPrefix = isTask ? '- [ ] ' : '- ';
+        let memoText = `${taskPrefix}${timeString} ${content}`;
+
         // 添加标签
         const allTags = [...this.settings.defaultTags, ...tags];
         if (allTags.length > 0) {
             const tagsText = allTags.map(t => `#${t}`).join(' ');
-            memoText = `- ${timeString} ${tagsText} ${content}`;
+            memoText = `${taskPrefix}${timeString} ${tagsText} ${content}`;
         }
 
         try {
@@ -90,6 +91,7 @@ export class MemosStorage {
                 lineNumber: -1, // 新添加的在末尾
                 rawText: memoText,
                 dateString: dateString,
+                ...(isTask ? { taskStatus: 'CHECKBOX_UNCHECKED' as const } : {}),
             };
 
             // 更新缓存

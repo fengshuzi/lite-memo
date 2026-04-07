@@ -18,13 +18,15 @@ export class MemoInputModal extends Modal {
     private isSubmitting: boolean = false;
     private editingMemo: MemoItem | null = null; // 编辑模式下的原始闪念
     private isEditMode: boolean = false;
+    private isTask: boolean = false; // 是否作为任务保存
 
     constructor(
-        app: App, 
-        storage: MemosStorage, 
+        app: App,
+        storage: MemosStorage,
         settings: MemosPluginSettings,
         onSubmit?: () => void,
-        editMemo?: MemoItem // 可选：要编辑的闪念
+        editMemo?: MemoItem, // 可选：要编辑的闪念
+        isTask?: boolean // 可选：是否作为任务保存
     ) {
         super(app);
         this.storage = storage;
@@ -32,6 +34,7 @@ export class MemoInputModal extends Modal {
         this.onSubmitCallback = onSubmit || null;
         this.editingMemo = editMemo || null;
         this.isEditMode = !!editMemo;
+        this.isTask = isTask || false;
     }
 
     onOpen(): void {
@@ -248,7 +251,7 @@ export class MemoInputModal extends Modal {
                 }
             } else {
                 // 新建模式：创建新闪念
-                const memo = await this.storage.saveMemo(content, tags);
+                const memo = await this.storage.saveMemo(content, tags, this.isTask);
                 success = !!memo;
                 if (success) {
                     new Notice('✨ 闪念已记录');
