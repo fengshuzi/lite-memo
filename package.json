@@ -22,7 +22,7 @@
         "journal",
         "flomo"
     ],
-    "author": "Your Name",
+    "author": "lizhifeng",
     "license": "MIT",
     "devDependencies": {
         "@types/node": "^18.0.0",
