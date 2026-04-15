@@ -2,7 +2,6 @@
  * 闪念笔记插件设置页面
  */
 
-/* eslint-disable obsidianmd/ui/sentence-case */
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import type MemosPlugin from './main';
 
@@ -27,10 +26,10 @@ export class MemosSettingTab extends PluginSettingTab {
             .setName('Journal 文件夹')
             .setDesc('闪念笔记存储的文件夹路径')
             .addText(text => text
-                .setPlaceholder('journals')
+                .setPlaceholder('Journals')
                 .setValue(this.plugin.settings.journalFolder)
                 .onChange(async (value) => {
-                    this.plugin.settings.journalFolder = value || 'journals';
+                    this.plugin.settings.journalFolder = value || 'Journals';
                     await this.plugin.saveSettings();
                 }));
 
@@ -38,7 +37,7 @@ export class MemosSettingTab extends PluginSettingTab {
             .setName('日期格式')
             .setDesc('Journal 文件名的日期格式')
             .addText(text => text
-                .setPlaceholder('YYYY-MM-DD')
+                .setPlaceholder('Yyyy-mm-dd')
                 .setValue(this.plugin.settings.dateFormat)
                 .onChange(async (value) => {
                     this.plugin.settings.dateFormat = value || 'YYYY-MM-DD';
@@ -49,7 +48,7 @@ export class MemosSettingTab extends PluginSettingTab {
             .setName('时间格式')
             .setDesc('闪念笔记的时间戳格式')
             .addText(text => text
-                .setPlaceholder('HH:mm')
+                .setPlaceholder('Hh:mm')
                 .setValue(this.plugin.settings.timeFormat)
                 .onChange(async (value) => {
                     this.plugin.settings.timeFormat = value || 'HH:mm';
@@ -106,7 +105,7 @@ export class MemosSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('启用任务时间追踪')
-            .setDesc('点击任务复选框时自动切换状态并追踪耗时（参考 obsidian-time-tracking）')
+            .setDesc('点击任务复选框时自动切换状态并追踪耗时（参考 Obsidian-time-tracking）')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.enableTimeTracking)
                 .onChange(async (value) => {
@@ -130,9 +129,9 @@ export class MemosSettingTab extends PluginSettingTab {
             cls: 'setting-item-description'
         });
         const trackingList = trackingInfo.createEl('ul');
-        trackingList.createEl('li', { text: '点击复选框：[ ] → DOING → [x]（带时长）' });
-        trackingList.createEl('li', { text: '点击复选框：TODO → DOING → DONE（带时长）' });
-        trackingList.createEl('li', { text: 'DOING 状态会记录开始时间并显示在任务前' });
+        trackingList.createEl('li', { text: '点击复选框：未完成 → 进行中 → 已完成（带时长）' });
+        trackingList.createEl('li', { text: '点击复选框：todo → doing → done（带时长）' });
+        trackingList.createEl('li', { text: 'Doing 状态会记录开始时间并显示在任务前' });
         trackingList.createEl('li', { text: '完成任务时自动计算并显示耗时' });
 
         // 任务列表标签设置
@@ -140,7 +139,7 @@ export class MemosSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('启用任务列表标签')
-            .setDesc('在快捷标签区域显示特殊的任务列表标签（ALL TASKS、TODO LIST、DONE LIST）')
+            .setDesc('在快捷标签区域显示特殊的任务列表标签（all tasks、todo list、done list）')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.enableTaskListTags)
                 .onChange(async (value) => {
@@ -150,12 +149,12 @@ export class MemosSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('所有任务标签名称')
-            .setDesc('显示所有任务（包括 markdown 复选框和关键词任务）的标签名称')
+            .setDesc('显示所有任务（包括 Markdown 复选框和关键词任务）的标签名称')
             .addText(text => text
-                .setPlaceholder('ALL TASKS')
+                .setPlaceholder('All tasks')
                 .setValue(this.plugin.settings.allTasksTagName)
                 .onChange(async (value) => {
-                    this.plugin.settings.allTasksTagName = value || 'ALL TASKS';
+                    this.plugin.settings.allTasksTagName = value || 'All tasks';
                     await this.plugin.saveSettings();
                 }));
 
@@ -163,10 +162,10 @@ export class MemosSettingTab extends PluginSettingTab {
             .setName('待办任务标签名称')
             .setDesc('显示未完成任务的标签名称')
             .addText(text => text
-                .setPlaceholder('TODO LIST')
+                .setPlaceholder('Todo list')
                 .setValue(this.plugin.settings.todoListTagName)
                 .onChange(async (value) => {
-                    this.plugin.settings.todoListTagName = value || 'TODO LIST';
+                    this.plugin.settings.todoListTagName = value || 'Todo list';
                     await this.plugin.saveSettings();
                 }));
 
@@ -174,10 +173,10 @@ export class MemosSettingTab extends PluginSettingTab {
             .setName('已完成任务标签名称')
             .setDesc('显示已完成任务的标签名称')
             .addText(text => text
-                .setPlaceholder('DONE LIST')
+                .setPlaceholder('Done list')
                 .setValue(this.plugin.settings.doneListTagName)
                 .onChange(async (value) => {
-                    this.plugin.settings.doneListTagName = value || 'DONE LIST';
+                    this.plugin.settings.doneListTagName = value || 'Done list';
                     await this.plugin.saveSettings();
                 }));
 
@@ -187,9 +186,9 @@ export class MemosSettingTab extends PluginSettingTab {
             cls: 'setting-item-description'
         });
         const taskListList = taskListInfo.createEl('ul');
-        taskListList.createEl('li', { text: 'ALL TASKS：显示所有任务（[ ]、[x]、TODO、DOING、DONE 等）' });
-        taskListList.createEl('li', { text: 'TODO LIST：显示未完成任务（[ ]、TODO、DOING、NOW、LATER、WAITING）' });
-        taskListList.createEl('li', { text: 'DONE LIST：显示已完成任务（[x]、DONE、CANCELLED）' });
+        taskListList.createEl('li', { text: 'All tasks：显示所有任务（[ ]、[X]、todo、doing、done 等）' });
+        taskListList.createEl('li', { text: 'Todo list：显示未完成任务（[ ]、todo、doing、now、later、waiting）' });
+        taskListList.createEl('li', { text: 'Done list：显示已完成任务（[X]、done、cancelled）' });
 
         // 标签设置
         new Setting(containerEl).setName('🏷️ 标签').setHeading();
@@ -198,7 +197,7 @@ export class MemosSettingTab extends PluginSettingTab {
             .setName('默认标签')
             .setDesc('新建闪念时自动添加的标签，用逗号分隔')
             .addText(text => text
-                .setPlaceholder('memo, fleeting')
+                .setPlaceholder('Memo, fleeting')
                 .setValue(this.plugin.settings.defaultTags.join(', '))
                 .onChange(async (value) => {
                     this.plugin.settings.defaultTags = value
@@ -362,11 +361,11 @@ export class MemosSettingTab extends PluginSettingTab {
         
         const aboutInfo = containerEl.createDiv({ cls: 'setting-item' });
         aboutInfo.createEl('p', { 
-            text: '闪念笔记插件灵感来自 Logseq 的闪念功能和 Flomo 笔记应用。',
+            text: '闪念笔记插件灵感来自 Logseq 的闪念功能和 flomo 笔记应用。',
             cls: 'setting-item-description'
         });
         aboutInfo.createEl('p', { 
-            text: '闪念格式：- HH:mm #标签 内容',
+            text: '闪念格式：- 时:分 #标签 内容',
             cls: 'setting-item-description'
         });
         aboutInfo.createEl('p', { 

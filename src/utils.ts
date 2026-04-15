@@ -190,3 +190,5 @@ export function escapeHtml(text: string): string {
     };
     return text.replace(/[&<>"']/g, (m) => map[m]);
 }
+
+/* eslint-enable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */

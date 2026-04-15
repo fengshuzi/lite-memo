@@ -36,12 +36,14 @@ export class PomodoroStatsView extends ItemView {
         return 'clock';
     }
 
-    async onOpen(): Promise<void> {
+    onOpen(): Promise<void> {
         this.renderContent();
+        return Promise.resolve();
     }
 
-    async onClose(): Promise<void> {
+    onClose(): Promise<void> {
         this.pomodoroManager.removeListener(this.listener);
+        return Promise.resolve();
     }
 
     private renderContent(): void {
