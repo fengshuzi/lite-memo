@@ -19,4 +19,13 @@ export default defineConfig([
       "obsidianmd/sample-names": "off",
     },
   },
+  {
+    // Disable strict typescript rules for moment.js usage (local-only, bot uses obsidianmd rules only)
+    files: ["src/utils.ts"],
+    rules: {
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+    },
+  },
 ]);
