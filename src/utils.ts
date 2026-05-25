@@ -5,6 +5,17 @@
 import { moment, TFile } from 'obsidian';
 
 /**
+ * Auto-resize textarea to fit content.
+ * If textarea is empty, resets to default height.
+ */
+export function resizeTextarea(el: HTMLTextAreaElement, maxHeight: number): void {
+    el.setCssProps({ 'height': 'auto' });
+    if (el.value) {
+        el.setCssProps({ 'height': `${Math.min(el.scrollHeight, maxHeight)}px` });
+    }
+}
+
+/**
  * 生成唯一 ID
  */
 export function generateId(): string {

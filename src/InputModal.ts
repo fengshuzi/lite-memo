@@ -7,7 +7,7 @@
 import { App, Modal, Notice } from 'obsidian';
 import { MemosStorage } from './storage';
 import { MemoItem, MemosPluginSettings, parseQuickTags } from './types';
-import { formatTime } from './utils';
+import { formatTime, resizeTextarea } from './utils';
 
 export class MemoInputModal extends Modal {
     private storage: MemosStorage;
@@ -82,8 +82,7 @@ export class MemoInputModal extends Modal {
             // 自动调整高度
             (this.activeWindow as Window).setTimeout(() => {
                 if (this.textArea) {
-                    this.textArea.setCssProps({ 'height': 'auto' });
-                    this.textArea.setCssProps({ 'height': Math.min(this.textArea.scrollHeight, 300) + 'px' });
+                    resizeTextarea(this.textArea, 300);
                 }
             }, 10);
         }
@@ -91,8 +90,7 @@ export class MemoInputModal extends Modal {
         // 自动调整高度
         this.textArea.addEventListener('input', () => {
             if (this.textArea) {
-                this.textArea.setCssProps({ 'height': 'auto' });
-                this.textArea.setCssProps({ 'height': Math.min(this.textArea.scrollHeight, 300) + 'px' });
+                resizeTextarea(this.textArea, 300);
             }
         });
 
@@ -268,7 +266,7 @@ export class MemoInputModal extends Modal {
                     // 清空输入框，准备下一条（仅新建模式）
                     if (this.textArea) {
                         this.textArea.value = '';
-                        this.textArea.setCssProps({ 'height': 'auto' });
+                        resizeTextarea(this.textArea, 300);
                         this.textArea.focus();
                     }
                     if (this.tagInput) {

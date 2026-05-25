@@ -19,7 +19,7 @@
 import { ItemView, WorkspaceLeaf, Menu, Notice, MarkdownRenderer, TFile, setIcon } from 'obsidian';
 import { MemosStorage } from './storage';
 import { MemoItem, MemosPluginSettings, MEMOS_VIEW_TYPE, parseQuickTags, QuickTag, parseSmartKeywords, matchSmartKeyword, matchHabitKeyword, TaskStatus, PomodoroSession } from './types';
-import { getFriendlyDateDisplay, debounce } from './utils';
+import { getFriendlyDateDisplay, debounce, resizeTextarea } from './utils';
 import { MemoInputModal } from './InputModal';
 import { PomodoroManager } from './pomodoro';
 import type MemosPlugin from './main';
@@ -222,8 +222,7 @@ export class MemosView extends ItemView {
             if (!this.inputTextArea) return;
             const isMobile = window.matchMedia('(max-width: 768px)').matches;
             if (isMobile) return;
-            this.inputTextArea.setCssProps({ 'height': 'auto' });
-            this.inputTextArea.setCssProps({ 'height': Math.min(this.inputTextArea.scrollHeight, 150) + 'px' });
+            resizeTextarea(this.inputTextArea, 150);
         });
 
         // 快捷键处理
@@ -462,7 +461,7 @@ export class MemosView extends ItemView {
                 // 清空输入框
                 if (this.inputTextArea) {
                     this.inputTextArea.value = '';
-                    this.inputTextArea.setCssProps({ 'height': 'auto' });
+                    resizeTextarea(this.inputTextArea, 150);
                 }
                 this.editingMemo = null;
                 this.updateInputAreaState();
@@ -483,8 +482,7 @@ export class MemosView extends ItemView {
         this.editingMemo = memo;
         if (this.inputTextArea) {
             this.inputTextArea.value = memo.content;
-            this.inputTextArea.setCssProps({ 'height': 'auto' });
-            this.inputTextArea.setCssProps({ 'height': Math.min(this.inputTextArea.scrollHeight, 150) + 'px' });
+            resizeTextarea(this.inputTextArea, 150);
             this.inputTextArea.focus();
             // 光标移到末尾
             this.inputTextArea.selectionStart = this.inputTextArea.value.length;
@@ -516,7 +514,7 @@ export class MemosView extends ItemView {
         this.editingMemo = null;
         if (this.inputTextArea) {
             this.inputTextArea.value = '';
-            this.inputTextArea.setCssProps({ 'height': 'auto' });
+            resizeTextarea(this.inputTextArea, 150);
         }
         this.currentTag = '';
         this.currentQuickTag = null;
