@@ -1,7 +1,14 @@
 import esbuild from "esbuild";
 import process from "process";
-import { builtinModules } from "module";
 import { copyFileSync, existsSync, mkdirSync } from "fs";
+
+const nodeBuiltins = [
+	"assert", "buffer", "child_process", "cluster", "console", "constants",
+	"crypto", "dgram", "dns", "domain", "events", "fs", "http", "https",
+	"module", "net", "os", "path", "punycode", "querystring", "readline",
+	"repl", "stream", "string_decoder", "sys", "timers", "tls", "tty",
+	"url", "util", "v8", "vm", "worker_threads", "zlib",
+];
 
 const prod = process.argv[2] === "production";
 
@@ -22,7 +29,7 @@ const context = await esbuild.context({
         "@lezer/common",
         "@lezer/highlight",
         "@lezer/lr",
-        ...builtinModules,
+        ...nodeBuiltins,
     ],
     format: "cjs",
     minify: prod,
