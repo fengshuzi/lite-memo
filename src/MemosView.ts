@@ -1425,17 +1425,6 @@ export class MemosView extends ItemView {
         });
 
         menu.addItem((item) => {
-            item.setTitle('复制内容')
-                .setIcon('copy')
-                .onClick(() => {
-                    void navigator.clipboard.writeText(memo.content);
-                    new Notice('已复制到剪贴板');
-                });
-        });
-
-        menu.addSeparator();
-
-        menu.addItem((item) => {
             item.setTitle('删除')
                 .setIcon('trash')
                 .onClick(async () => {

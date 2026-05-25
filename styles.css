@@ -55,7 +55,6 @@
     align-items: center;
     padding: var(--memos-spacing) 0;
     border-bottom: 1px solid var(--memos-border);
-    background: transparent;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -104,13 +103,13 @@
     color: var(--text-normal);
 }
 
-.memos-new-btn {
-    background: var(--memos-primary) !important;
-    color: white !important;
+.memos-header-right .memos-new-btn {
+    background: var(--memos-primary);
+    color: white;
 }
 
-.memos-new-btn:hover {
-    background: var(--memos-primary-hover) !important;
+.memos-header-right .memos-new-btn:hover {
+    background: var(--memos-primary-hover);
 }
 
 /* ============================================
@@ -621,8 +620,8 @@
 /* ============================================
    输入弹窗
    ============================================ */
-.memos-input-modal {
-    padding: 0 !important;
+.modal .modal-content.memos-input-modal {
+    padding: 0;
 }
 
 .memos-input-modal .modal-content {
@@ -826,33 +825,33 @@
 
 /* 手机端 / 小屏（宽度 ≤768px）：隐藏搜索、输入框单行、标签改为下拉 */
 @media (max-width: 768px) {
-    .memos-search-container {
-        display: none !important;
+    .memos-view-container .memos-search-container {
+        display: none;
     }
 
-    .memos-tag-filter {
-        display: none !important;
+    .memos-view-container .memos-tag-filter {
+        display: none;
     }
 
-    .memos-tag-select {
-        display: none !important;
+    .memos-view-container .memos-tag-select {
+        display: none;
     }
 
-    .memos-inline-input {
-        min-height: 40px !important;
-        max-height: 40px !important;
-        height: 40px !important;
-        resize: none !important;
-        overflow: hidden !important;
+    .memos-view-container .memos-inline-input {
+        min-height: 40px;
+        max-height: 40px;
+        height: 40px;
+        resize: none;
+        overflow: hidden;
         line-height: 1.5;
     }
 
-    .memos-inline-quick-tags {
-        display: none !important;
+    .memos-view-container .memos-inline-quick-tags {
+        display: none;
     }
 
-    .memos-quick-tags-dropdown {
-        display: block !important;
+    .memos-view-container .memos-quick-tags-dropdown {
+        display: block;
         margin-top: var(--memos-spacing-sm);
     }
 
@@ -881,7 +880,7 @@
     /* 隐藏 disabled 和 hidden 选项（在下拉列表中不显示） */
     .memos-quick-tags-select option[disabled],
     .memos-quick-tags-select option[hidden] {
-        display: none !important;
+        display: none;
     }
 }
 
@@ -890,12 +889,12 @@
         flex-direction: column;
     }
 
-    .memos-tag-filter {
-        display: none !important;
+    .memos-view-container .memos-tag-filter {
+        display: none;
     }
 
-    .memos-tag-select {
-        display: none !important;
+    .memos-view-container .memos-tag-select {
+        display: none;
     }
 
     .memos-input-hints {

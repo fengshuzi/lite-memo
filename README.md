@@ -2,6 +2,8 @@
 
 **像发微博一样记录灵感**
 
+Lite Memo is a lightweight Obsidian plugin for quickly capturing ideas, tasks, and journal-style memos. It provides a low-friction input workflow, tag filtering, automatic keyword tagging, task time tracking, and Pomodoro support while storing everything in plain Markdown journal files.
+
 [![GitHub Release](https://img.shields.io/github/v/release/fengshuzi/lite-memo)](https://github.com/fengshuzi/lite-memo/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
