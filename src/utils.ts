@@ -152,15 +152,16 @@ export function getFriendlyDateDisplay(dateStr: string): string {
  */
 export function debounce<T extends (...args: unknown[]) => unknown>(
     func: T,
-    wait: number
+    wait: number,
+    win: Window = window
 ): (...args: Parameters<T>) => void {
     let timeout: ReturnType<typeof setTimeout> | null = null;
-    
+
     return function (this: unknown, ...args: Parameters<T>) {
         if (timeout) {
-            clearTimeout(timeout);
+            win.clearTimeout(timeout);
         }
-        timeout = setTimeout(() => {
+        timeout = win.setTimeout(() => {
             func.apply(this, args);
         }, wait);
     };

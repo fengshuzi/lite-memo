@@ -80,7 +80,7 @@ export class MemoInputModal extends Modal {
         if (this.isEditMode && this.editingMemo) {
             this.textArea.value = this.editingMemo.content;
             // 自动调整高度
-            setTimeout(() => {
+            (this.activeWindow as Window).setTimeout(() => {
                 if (this.textArea) {
                     this.textArea.setCssProps({ 'height': 'auto' });
                     this.textArea.setCssProps({ 'height': Math.min(this.textArea.scrollHeight, 300) + 'px' });
@@ -209,7 +209,7 @@ export class MemoInputModal extends Modal {
         });
 
         // 聚焦输入框，光标移到末尾
-        setTimeout(() => {
+        (this.activeWindow as Window).setTimeout(() => {
             if (this.textArea) {
                 this.textArea.focus();
                 // 光标移到末尾

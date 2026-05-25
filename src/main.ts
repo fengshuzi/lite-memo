@@ -121,7 +121,7 @@ export default class MemosPlugin extends Plugin {
 
     onunload(): void {
         if (this.pendingRefreshTimer) {
-            clearTimeout(this.pendingRefreshTimer);
+            (this.app.activeWindow as Window).clearTimeout(this.pendingRefreshTimer);
         }
         this.pomodoroManager?.dispose();
     }
@@ -132,9 +132,9 @@ export default class MemosPlugin extends Plugin {
      */
     private scheduleDebouncedRefresh(): void {
         if (this.pendingRefreshTimer) {
-            clearTimeout(this.pendingRefreshTimer);
+            (this.app.activeWindow as Window).clearTimeout(this.pendingRefreshTimer);
         }
-        this.pendingRefreshTimer = setTimeout(() => {
+        this.pendingRefreshTimer = (this.app.activeWindow as Window).setTimeout(() => {
             this.pendingRefreshTimer = null;
             const view = this.getActiveMemosView();
             if (view && !view.shouldSkipAutoRefresh()) {

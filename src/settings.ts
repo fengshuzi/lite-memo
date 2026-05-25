@@ -222,7 +222,7 @@ export class MemosSettingTab extends PluginSettingTab {
             .setName('智能关键词（记账识别）')
             .setDesc('内容包含数字+关键词时自动添加标签。JSON格式：{"标签": ["关键词1", "关键词2"]}。例如输入「午餐10元」自动加 #cy')
             .addTextArea(text => {
-                text.inputEl.setCssProps({ 'width': '100%', 'height': '120px', 'font-family': 'monospace' });
+                text.inputEl.addClass('memos-settings-textarea');
                 text
                     .setPlaceholder('{"cy": ["餐", "吃", "午餐"], "gw": ["购", "买"]}')
                     .setValue(this.plugin.settings.smartKeywords)
@@ -236,7 +236,7 @@ export class MemosSettingTab extends PluginSettingTab {
             .setName('习惯打卡关键词')
             .setDesc('内容包含关键词时自动添加标签（不需要数字）。JSON格式：{"标签": ["关键词1", "关键词2"]}。例如输入「深蹲50个」自动加 #sp')
             .addTextArea(text => {
-                text.inputEl.setCssProps({ 'width': '100%', 'height': '120px', 'font-family': 'monospace' });
+                text.inputEl.addClass('memos-settings-textarea');
                 text
                     .setPlaceholder('{"sp": ["运动", "深蹲", "哑铃"], "reading": ["阅读", "读书"]}')
                     .setValue(this.plugin.settings.habitKeywords)

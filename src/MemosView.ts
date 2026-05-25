@@ -178,7 +178,7 @@ export class MemosView extends ItemView {
         const debouncedSearch = debounce((query: string) => {
             this.currentFilter.search = query || undefined;
             void this.loadMemos();
-        }, 300);
+        }, 300, this.app.activeWindow as Window);
         
         searchInput.addEventListener('input', (e) => {
             debouncedSearch((e.target as HTMLInputElement).value);
@@ -544,7 +544,7 @@ export class MemosView extends ItemView {
         if (this.editingMemo) {
             inputArea.addClass('is-editing');
             const hint = inputArea.createDiv({ cls: 'memos-edit-hint' });
-            hint.createEl('span', { text: '编辑中' });
+            hint.createSpan({ text: '编辑中' });
             const cancelBtn = hint.createEl('button', { text: '取消', cls: 'memos-cancel-edit' });
             cancelBtn.addEventListener('click', () => {
                 this.cancelEdit();
@@ -849,10 +849,10 @@ export class MemosView extends ItemView {
 
             // 显示状态标签（除了 TODO 和 DONE，它们只显示复选框）
             if (!['TODO', 'DONE'].includes(memo.taskStatus)) {
-                const statusLabel = taskContainer.createEl('span', {
+                const statusLabel = taskContainer.createSpan({
                     cls: `memos-task-status-label memos-status-${memo.taskStatus.toLowerCase()}`
                 });
-                statusLabel.textContent = memo.taskStatus;
+                statusLabel.setText(memo.taskStatus);
             }
             
             // 创建文本内容
@@ -984,7 +984,7 @@ export class MemosView extends ItemView {
                         const stableMemoId = `${updatedMemo.filePath}-${updatedMemo.lineNumber}`;
                         console.debug('启动番茄钟，stableMemoId:', stableMemoId);
 
-                        setTimeout(() => {
+                        (this.app.activeWindow as Window).setTimeout(() => {
                             // 用切换前的原始内容，避免 DOING 行中包含 <!-- ts:... --> 注释
                             this.pomodoroManager.start(stableMemoId, undefined, memo.content);
                         }, 200);
@@ -1000,14 +1000,14 @@ export class MemosView extends ItemView {
                     const session = this.pomodoroManager.getSession(stableMemoId);
 
                     if (session && (session.state === 'short_break' || session.state === 'long_break')) {
-                        setTimeout(() => {
+                        (this.app.activeWindow as Window).setTimeout(() => {
                             this.pomodoroManager.skipBreak(stableMemoId);
                             // 番茄钟处理完后再移除卡片
                             this.removeCardFromTodoList(updatedMemo);
                         }, 200);
                     } else if (session && (session.state === 'running' || session.state === 'paused')) {
                         console.debug('任务完成，停止番茄钟，stableMemoId:', stableMemoId);
-                        setTimeout(() => {
+                        (this.app.activeWindow as Window).setTimeout(() => {
                             this.pomodoroManager.stop(session.id, true);
                             // 番茄钟处理完后再移除卡片
                             this.removeCardFromTodoList(updatedMemo);
@@ -1020,7 +1020,7 @@ export class MemosView extends ItemView {
             }
         } finally {
             // 延迟重置标志位，确保 modify 事件已经处理完毕
-            setTimeout(() => {
+            (this.app.activeWindow as Window).setTimeout(() => {
                 this.skipNextAutoRefresh = false;
             }, 300);
         }
@@ -1120,10 +1120,10 @@ export class MemosView extends ItemView {
             }
             
             if (!['TODO', 'DONE'].includes(newMemo.taskStatus)) {
-                const statusLabel = taskContainer.createEl('span', {
+                const statusLabel = taskContainer.createSpan({
                     cls: `memos-task-status-label memos-status-${newMemo.taskStatus.toLowerCase()}`
                 });
-                statusLabel.textContent = newMemo.taskStatus;
+                statusLabel.setText(newMemo.taskStatus);
             }
             
             const textSpan = taskContainer.createSpan({ cls: 'memos-task-text' });
@@ -1708,7 +1708,7 @@ export class MemosView extends ItemView {
     /**
      * 渲染运行中/暂停状态
      */
-    private renderPomodoroActive(container: HTMLElement, memo: MemoItem, session: PomodoroSession): void {
+    private renderPomodoroActive(container: HTMLElement, _memo: MemoItem, session: PomodoroSession): void {
         container.addClass('memos-pomodoro-active');
 
         // 图标
