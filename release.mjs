@@ -85,12 +85,13 @@ const releaseNotes = `## Lite Memo v${version}
 2. 复制到 \`.obsidian/plugins/lite-memo/\` 目录
 3. 在 Obsidian 设置中启用插件
 `;
+const assetsFile = existsSync('dist/assets/wechat-donate.jpg') ? 'dist/assets/wechat-donate.jpg' : '';
 const r = spawnSync('gh', [
     'release', 'create', tagName,
-    mainJsPath, manifestPath, stylesPath,
+    mainJsPath, manifestPath, stylesPath, assetsFile,
     '--title', `v${version}`,
     '--notes', releaseNotes
-], { stdio: 'inherit', shell: false });
+].filter(Boolean), { stdio: 'inherit', shell: false });
 if (r.status !== 0) {
     console.error('❌ 创建 Release 失败');
     process.exit(1);
