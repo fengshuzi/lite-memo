@@ -728,7 +728,7 @@ export class PomodoroManager {
             return;
         }
 
-        this.timerInterval = window.setInterval(() => {
+        this.timerInterval = (this.plugin.app.activeWindow as Window).setInterval(() => {
             this.tick();
         }, 1000);
     }
@@ -740,7 +740,7 @@ export class PomodoroManager {
         );
 
         if (!hasActive && this.timerInterval !== null) {
-            window.clearInterval(this.timerInterval);
+            (this.plugin.app.activeWindow as Window).clearInterval(this.timerInterval);
             this.timerInterval = null;
         }
     }
@@ -842,7 +842,9 @@ export class PomodoroManager {
 
     dispose(): void {
         if (this.timerInterval !== null) {
-            window.clearInterval(this.timerInterval);
+            if (this.plugin.app.activeWindow) {
+                (this.plugin.app.activeWindow as Window).clearInterval(this.timerInterval);
+            }
             this.timerInterval = null;
         }
         this.listeners.clear();

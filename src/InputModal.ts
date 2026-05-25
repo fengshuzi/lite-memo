@@ -55,12 +55,12 @@ export class MemoInputModal extends Modal {
         } else {
             timeDisplay.setText(formatTime(new Date()));
             // 每分钟更新时间（仅新建模式）
-            const timeInterval = window.setInterval(() => {
+            const timeInterval = (this.activeWindow as Window).setInterval(() => {
                 timeDisplay.setText(formatTime(new Date()));
             }, 60000);
             // 清理定时器
             this.scope.register([], 'Escape', () => {
-                window.clearInterval(timeInterval);
+                (this.activeWindow as Window).clearInterval(timeInterval);
             });
         }
 
