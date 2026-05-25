@@ -89,7 +89,7 @@ const assetsFile = existsSync('dist/assets/wechat-donate.jpg') ? 'dist/assets/we
 const r = spawnSync('gh', [
     'release', 'create', tagName,
     mainJsPath, manifestPath, stylesPath, assetsFile,
-    '--title', `v${version}`,
+    '--title', `${version}`,
     '--notes', releaseNotes
 ].filter(Boolean), { stdio: 'inherit', shell: false });
 if (r.status !== 0) {
