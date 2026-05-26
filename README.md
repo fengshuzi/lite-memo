@@ -1,3 +1,29 @@
+# Lite Memo
+
+Lite Memo is a lightweight capture plugin for Obsidian. It helps you quickly write down ideas, tasks, expenses, and journal-style notes with timestamps, tags, keyword automation, task tracking, and Pomodoro support. All memos are saved as plain Markdown list items in daily journal files, so your data stays portable and easy to edit.
+
+## Features
+
+- Fast memo capture from a ribbon button, command, or hotkey.
+- Timestamped journal entries stored in Markdown files.
+- Tag filtering, quick tag buttons, and automatic keyword-based tags.
+- Task states for TODO, DOING, DONE, checkboxes, waiting items, and cancelled tasks.
+- Built-in task time tracking and Pomodoro sessions.
+- Automatic refresh when journal files are modified by external tools.
+
+## Installation
+
+1. Download `main.js`, `manifest.json`, and `styles.css` from the latest GitHub Release.
+2. Create `.obsidian/plugins/lite-memo/` inside your vault.
+3. Copy the downloaded files into that folder.
+4. Restart Obsidian or reload community plugins, then enable Lite Memo.
+
+## Usage
+
+Open Lite Memo from the ribbon or command palette, type a memo, and submit it. Use tags such as `#idea`, task syntax such as `- [ ]`, or configured keywords to organize entries automatically.
+
+---
+
 # 简记
 
 **像发微博一样记录灵感**

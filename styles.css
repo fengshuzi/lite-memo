@@ -58,7 +58,7 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    background: var(--background-primary);
+    background-color: var(--background-primary);
 }
 
 .memos-header-left {
@@ -92,24 +92,24 @@
     padding: 0;
     border: none;
     border-radius: var(--memos-radius);
-    background: transparent;
+    background-color: transparent;
     color: var(--text-muted);
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .memos-header-right button:hover {
-    background: var(--background-modifier-hover);
+    background-color: var(--background-modifier-hover);
     color: var(--text-normal);
 }
 
 .memos-header-right .memos-new-btn {
-    background: var(--memos-primary);
+    background-color: var(--memos-primary);
     color: white;
 }
 
 .memos-header-right .memos-new-btn:hover {
-    background: var(--memos-primary-hover);
+    background-color: var(--memos-primary-hover);
 }
 
 /* ============================================
@@ -121,7 +121,7 @@
 }
 
 .memos-input-area.is-editing {
-    background: rgba(245, 158, 11, 0.05);
+    background-color: rgba(245, 158, 11, 0.05);
     border-radius: var(--memos-radius);
     padding: var(--memos-spacing);
     margin: var(--memos-spacing) 0;
@@ -141,7 +141,7 @@
     padding: var(--memos-spacing-sm) var(--memos-spacing);
     border: 1.5px solid var(--text-faint);  /* 更明显的边框 */
     border-radius: var(--memos-radius);
-    background: var(--background-primary);
+    background-color: var(--background-primary);
     font-size: 14px;
     line-height: 1.5;
     resize: none;
@@ -168,7 +168,7 @@
     padding: 0;
     border: none;
     border-radius: var(--memos-radius);
-    background: var(--memos-primary);
+    background-color: var(--memos-primary);
     color: white;
     cursor: pointer;
     transition: background 0.15s ease;
@@ -176,7 +176,7 @@
 }
 
 .memos-send-btn:hover {
-    background: var(--memos-primary-hover);
+    background-color: var(--memos-primary-hover);
 }
 
 .memos-inline-quick-tags {
@@ -199,7 +199,7 @@
     padding: 2px 8px;
     font-size: 11px;
     color: var(--text-muted);
-    background: transparent;
+    background-color: transparent;
     border: 1px solid var(--memos-border);
     border-radius: var(--memos-radius-sm);
     cursor: pointer;
@@ -217,7 +217,7 @@
     gap: var(--memos-spacing-sm);
     padding: var(--memos-spacing) 0;
     border-bottom: 1px solid var(--memos-border);
-    background: transparent;
+    background-color: transparent;
 }
 
 .memos-search-container {
@@ -229,7 +229,7 @@
     padding: var(--memos-spacing-sm) var(--memos-spacing);
     border: 1px solid var(--memos-border);
     border-radius: var(--memos-radius);
-    background: var(--background-primary);
+    background-color: var(--background-primary);
     font-size: 13px;
     outline: none;
     transition: border-color 0.15s ease;
@@ -247,7 +247,7 @@
     padding: var(--memos-spacing-sm) var(--memos-spacing);
     border: 1px solid var(--memos-border);
     border-radius: var(--memos-radius);
-    background: var(--background-primary);
+    background-color: var(--background-primary);
     font-size: 13px;
     cursor: pointer;
     outline: none;
@@ -299,7 +299,7 @@
 .memos-card {
     position: relative;
     padding: var(--memos-spacing);
-    background: var(--memos-card-bg);
+    background-color: var(--memos-card-bg);
     border: 1px solid var(--memos-border);
     border-radius: var(--memos-radius);
     box-shadow: var(--memos-card-shadow);
@@ -417,27 +417,27 @@
 }
 
 .memos-status-doing {
-    background: rgba(245, 158, 11, 0.15);
+    background-color: rgba(245, 158, 11, 0.15);
     color: #f59e0b;
 }
 
 .memos-status-now {
-    background: rgba(239, 68, 68, 0.15);
+    background-color: rgba(239, 68, 68, 0.15);
     color: #ef4444;
 }
 
 .memos-status-later {
-    background: rgba(139, 92, 246, 0.15);
+    background-color: rgba(139, 92, 246, 0.15);
     color: #8b5cf6;
 }
 
 .memos-status-waiting {
-    background: rgba(6, 182, 212, 0.15);
+    background-color: rgba(6, 182, 212, 0.15);
     color: #06b6d4;
 }
 
 .memos-status-cancelled {
-    background: rgba(107, 114, 128, 0.15);
+    background-color: rgba(107, 114, 128, 0.15);
     color: #6b7280;
 }
 
@@ -479,7 +479,7 @@
     padding: 0;
     border: none;
     border-radius: var(--memos-radius-sm);
-    background: transparent;
+    background-color: transparent;
     color: var(--text-muted);
     cursor: pointer;
     opacity: 0;
@@ -491,7 +491,7 @@
 }
 
 .memos-card-more:hover {
-    background: var(--background-modifier-hover);
+    background-color: var(--background-modifier-hover);
     color: var(--text-normal);
 }
 
@@ -581,7 +581,7 @@
     padding: var(--memos-spacing-sm) var(--memos-spacing);
     border: none;
     border-radius: var(--memos-radius);
-    background: var(--memos-primary);
+    background-color: var(--memos-primary);
     color: white;
     font-size: 13px;
     cursor: pointer;
@@ -589,7 +589,7 @@
 }
 
 .memos-empty-btn:hover {
-    background: var(--memos-primary-hover);
+    background-color: var(--memos-primary-hover);
 }
 
 /* ============================================
@@ -605,7 +605,7 @@
     padding: var(--memos-spacing-sm) 24px;
     border: 1px solid var(--memos-border);
     border-radius: var(--memos-radius);
-    background: transparent;
+    background-color: transparent;
     color: var(--text-muted);
     font-size: 13px;
     cursor: pointer;
@@ -648,7 +648,7 @@
     padding: 2px 8px;
     font-size: 11px;
     color: #f59e0b;
-    background: rgba(245, 158, 11, 0.1);
+    background-color: rgba(245, 158, 11, 0.1);
     border-radius: 4px;
 }
 
@@ -663,7 +663,7 @@
     padding: var(--memos-spacing);
     border: 1px solid var(--memos-border);
     border-radius: var(--memos-radius);
-    background: var(--background-primary);
+    background-color: var(--background-primary);
     font-size: 14px;
     line-height: 1.6;
     resize: none;
@@ -698,7 +698,7 @@
     padding: var(--memos-spacing-sm) var(--memos-spacing);
     border: 1px solid var(--memos-border);
     border-radius: var(--memos-radius);
-    background: var(--background-primary);
+    background-color: var(--background-primary);
     font-size: 13px;
     outline: none;
     transition: border-color 0.15s ease;
@@ -729,7 +729,7 @@
     padding: 3px 10px;
     font-size: 11px;
     color: var(--text-muted);
-    background: transparent;
+    background-color: transparent;
     border: 1px solid var(--memos-border);
     border-radius: 12px;
     cursor: pointer;
@@ -743,7 +743,7 @@
 }
 
 .memos-quick-tag.is-active {
-    background: var(--memos-primary);
+    background-color: var(--memos-primary);
     border-color: var(--memos-primary);
     color: white;
 }
@@ -754,19 +754,19 @@
 
 /* 任务列表标签样式 */
 .memos-task-list-tag {
-    background: rgba(59, 130, 246, 0.1);
+    background-color: rgba(59, 130, 246, 0.1);
     border-color: #3b82f6;
     color: #3b82f6;
 }
 
 .memos-task-list-tag:hover {
-    background: rgba(59, 130, 246, 0.2);
+    background-color: rgba(59, 130, 246, 0.2);
     border-color: #2563eb;
     color: #2563eb;
 }
 
 .memos-task-list-tag.is-active {
-    background: #3b82f6;
+    background-color: #3b82f6;
     border-color: #3b82f6;
     color: white;
 }
@@ -777,7 +777,7 @@
     align-items: center;
     padding: var(--memos-spacing);
     border-top: 1px solid var(--memos-border);
-    background: var(--background-secondary);
+    background-color: var(--background-secondary);
 }
 
 .memos-input-hints {
@@ -800,23 +800,23 @@
 }
 
 .memos-btn-cancel {
-    background: transparent;
+    background-color: transparent;
     color: var(--text-muted);
     border: 1px solid var(--memos-border);
 }
 
 .memos-btn-cancel:hover {
-    background: var(--background-modifier-hover);
+    background-color: var(--background-modifier-hover);
 }
 
 .memos-btn-submit {
-    background: var(--memos-primary);
+    background-color: var(--memos-primary);
     color: white;
     min-width: 80px;
 }
 
 .memos-btn-submit:hover {
-    background: var(--memos-primary-hover);
+    background-color: var(--memos-primary-hover);
 }
 
 /* ============================================
@@ -860,7 +860,7 @@
         padding: var(--memos-spacing-sm) var(--memos-spacing);
         border: 1px solid var(--memos-border);
         border-radius: var(--memos-radius);
-        background: var(--background-primary);
+        background-color: var(--background-primary);
         font-size: 14px;
         color: var(--text-normal);
         cursor: pointer;
@@ -916,16 +916,16 @@
 }
 
 .memos-content::-webkit-scrollbar-track {
-    background: transparent;
+    background-color: transparent;
 }
 
 .memos-content::-webkit-scrollbar-thumb {
-    background: var(--background-modifier-border);
+    background-color: var(--background-modifier-border);
     border-radius: 3px;
 }
 
 .memos-content::-webkit-scrollbar-thumb:hover {
-    background: var(--text-faint);
+    background-color: var(--text-faint);
 }
 
 /* ============================================
@@ -936,7 +936,7 @@
 .memos-pomodoro-control {
     margin-top: 8px;
     padding: 6px 10px;
-    background: var(--background-secondary);
+    background-color: var(--background-secondary);
     border-radius: 6px;
     display: flex;
     align-items: center;
@@ -946,7 +946,7 @@
 
 /* 开始按钮 */
 .memos-pomodoro-start {
-    background: var(--interactive-accent);
+    background-color: var(--interactive-accent);
     color: var(--text-on-accent);
     border: none;
     padding: 4px 12px;
@@ -962,7 +962,7 @@
 
 /* 运行状态 */
 .memos-pomodoro-active {
-    background: rgba(230, 126, 34, 0.1);
+    background-color: rgba(230, 126, 34, 0.1);
     border-left: 3px solid #e67e22;
 }
 
@@ -987,7 +987,7 @@
 }
 
 .memos-pomodoro-btn {
-    background: transparent;
+    background-color: transparent;
     border: 1px solid var(--background-modifier-border);
     padding: 2px 8px;
     border-radius: 4px;
@@ -998,7 +998,7 @@
 }
 
 .memos-pomodoro-btn:hover {
-    background: var(--background-modifier-hover);
+    background-color: var(--background-modifier-hover);
     color: var(--text-normal);
 }
 
@@ -1007,13 +1007,13 @@
 }
 
 .memos-pomodoro-stop:hover {
-    background: rgba(239, 68, 68, 0.1);
+    background-color: rgba(239, 68, 68, 0.1);
     border-color: #ef4444;
 }
 
 /* 小按钮（用于完成状态） */
 .memos-pomodoro-btn-small {
-    background: transparent;
+    background-color: transparent;
     border: 1px solid var(--background-modifier-border);
     padding: 2px 6px;
     border-radius: 4px;
@@ -1024,14 +1024,14 @@
 }
 
 .memos-pomodoro-btn-small:hover {
-    background: var(--background-modifier-hover);
+    background-color: var(--background-modifier-hover);
     color: var(--text-normal);
     border-color: var(--interactive-accent);
 }
 
 /* 完成状态 */
 .memos-pomodoro-completed {
-    background: rgba(16, 185, 129, 0.1);
+    background-color: rgba(16, 185, 129, 0.1);
     border-left: 3px solid #10b981;
 }
 
@@ -1061,13 +1061,13 @@
 
 /* 短休息状态 */
 .memos-pomodoro-short-break {
-    background: rgba(59, 130, 246, 0.1);
+    background-color: rgba(59, 130, 246, 0.1);
     border-left: 3px solid #3b82f6;
 }
 
 /* 长休息状态 */
 .memos-pomodoro-long-break {
-    background: rgba(34, 197, 94, 0.12);
+    background-color: rgba(34, 197, 94, 0.12);
     border-left: 3px solid #22c55e;
 }
 
@@ -1099,7 +1099,7 @@
 }
 
 .memos-pomodoro-btn-start-next:hover {
-    background: rgba(230, 126, 34, 0.1);
+    background-color: rgba(230, 126, 34, 0.1);
 }
 
 /* ============================================
@@ -1174,7 +1174,7 @@
     align-items: center;
     gap: 8px;
     padding: 8px 10px;
-    background: var(--background-secondary);
+    background-color: var(--background-secondary);
     border-radius: 8px;
 }
 
@@ -1222,7 +1222,7 @@
 }
 
 .pomo-filter-btn {
-    background: transparent;
+    background-color: transparent;
     border: 1px solid var(--background-modifier-border);
     padding: 3px 10px;
     border-radius: 4px;
@@ -1233,18 +1233,18 @@
 }
 
 .pomo-filter-btn:hover {
-    background: var(--background-modifier-hover);
+    background-color: var(--background-modifier-hover);
     color: var(--text-normal);
 }
 
 .pomo-filter-active {
-    background: var(--interactive-accent);
+    background-color: var(--interactive-accent);
     color: var(--text-on-accent);
     border-color: var(--interactive-accent);
 }
 
 .pomo-filter-active:hover {
-    background: var(--interactive-accent);
+    background-color: var(--interactive-accent);
     color: var(--text-on-accent);
     filter: brightness(1.1);
 }
@@ -1264,22 +1264,22 @@
 }
 
 .pomo-btn-danger {
-    background: #ef4444;
+    background-color: #ef4444;
     color: white;
 }
 
 .pomo-btn-danger:hover {
-    background: #dc2626;
+    background-color: #dc2626;
 }
 
 .pomo-btn-danger-outline {
-    background: transparent;
+    background-color: transparent;
     color: #ef4444;
     border: 1px solid #ef4444;
 }
 
 .pomo-btn-danger-outline:hover {
-    background: rgba(239, 68, 68, 0.1);
+    background-color: rgba(239, 68, 68, 0.1);
 }
 
 /* 会话列表 */
@@ -1299,7 +1299,7 @@
     border-bottom: 1px solid var(--background-modifier-border);
     position: sticky;
     top: 0;
-    background: var(--background-primary);
+    background-color: var(--background-primary);
     z-index: 1;
 }
 
@@ -1318,7 +1318,7 @@
 }
 
 .pomo-session-row:hover {
-    background: var(--background-secondary);
+    background-color: var(--background-secondary);
 }
 
 .pomo-session-row input[type="checkbox"] {
@@ -1378,33 +1378,33 @@
 }
 
 .pomo-state-completed {
-    background: rgba(16, 185, 129, 0.15);
+    background-color: rgba(16, 185, 129, 0.15);
     color: #10b981;
 }
 
 .pomo-state-running {
-    background: rgba(230, 126, 34, 0.15);
+    background-color: rgba(230, 126, 34, 0.15);
     color: #e67e22;
 }
 
 .pomo-state-paused {
-    background: rgba(107, 114, 128, 0.15);
+    background-color: rgba(107, 114, 128, 0.15);
     color: #6b7280;
 }
 
 .pomo-state-idle {
-    background: rgba(107, 114, 128, 0.1);
+    background-color: rgba(107, 114, 128, 0.1);
     color: #9ca3af;
 }
 
 .pomo-state-break {
-    background: rgba(59, 130, 246, 0.15);
+    background-color: rgba(59, 130, 246, 0.15);
     color: #3b82f6;
 }
 
 /* 行内删除按钮 */
 .pomo-row-delete {
-    background: transparent;
+    background-color: transparent;
     border: none;
     padding: 2px;
     cursor: pointer;
@@ -1418,7 +1418,7 @@
 
 .pomo-row-delete:hover {
     color: #ef4444;
-    background: rgba(239, 68, 68, 0.1);
+    background-color: rgba(239, 68, 68, 0.1);
 }
 
 .pomo-row-delete svg {
@@ -1461,7 +1461,7 @@
     padding: 16px 20px;
     border: 1px solid var(--background-modifier-border);
     border-radius: 12px;
-    background: var(--background-secondary);
+    background-color: var(--background-secondary);
 }
 .plugin-donate-qr img {
     border-radius: 8px;
