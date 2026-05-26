@@ -31,6 +31,11 @@ export default class MemosPlugin extends Plugin {
     pomodoroManager: PomodoroManager | null = null;
     private pendingRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
+    private getTimerWindow(): Window {
+        const activeWindow = this.app.activeWindow as Window | undefined;
+        return activeWindow ?? window;
+    }
+
     async onload(): Promise<void> {
         // 加载设置
         await this.loadSettings();
@@ -121,7 +126,7 @@ export default class MemosPlugin extends Plugin {
 
     onunload(): void {
         if (this.pendingRefreshTimer) {
-            (this.app.activeWindow as Window).clearTimeout(this.pendingRefreshTimer);
+            this.getTimerWindow().clearTimeout(this.pendingRefreshTimer);
         }
         this.pomodoroManager?.dispose();
     }
@@ -131,10 +136,12 @@ export default class MemosPlugin extends Plugin {
      * 配合 MemosView.shouldSkipAutoRefresh() 避免内部修改文件时的多余刷新
      */
     private scheduleDebouncedRefresh(): void {
+        const timerWindow = this.getTimerWindow();
+
         if (this.pendingRefreshTimer) {
-            (this.app.activeWindow as Window).clearTimeout(this.pendingRefreshTimer);
+            timerWindow.clearTimeout(this.pendingRefreshTimer);
         }
-        this.pendingRefreshTimer = (this.app.activeWindow as Window).setTimeout(() => {
+        this.pendingRefreshTimer = timerWindow.setTimeout(() => {
             this.pendingRefreshTimer = null;
             const view = this.getActiveMemosView();
             if (view && !view.shouldSkipAutoRefresh()) {
