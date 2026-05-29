@@ -133,7 +133,7 @@ Alfred、Python 脚本、Quick Add 等外部工具修改 Journal 文件后，视
 
 ### Obsidian 社区市场（推荐）
 
-上架审核中，届时可直接在 Obsidian 设置 → 第三方插件 → 社区插件中搜索「简记」安装。
+打开 Obsidian 设置 → 第三方插件 → 浏览，搜索 **Lite Memo** 或 **fengshuzi** 即可安装。
 
 ### 手动安装
 
