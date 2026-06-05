@@ -1,44 +1,44 @@
 {
-    "name": "lite-memo",
-    "version": "1.0.3",
-    "description": "闪念笔记插件 - 像发微博一样记录灵感，支持时间戳、标签分类和历史浏览",
-    "main": "main.js",
-    "scripts": {
-        "build": "npm run lint && node esbuild.config.mjs production && cp manifest.json styles.css dist/",
-        "dev": "node esbuild.config.mjs",
-        "deploy": "node deploy.mjs",
-        "build-deploy": "npm run build && node deploy.mjs",
-        "format": "prettier --write .",
-        "lint": "eslint src/",
-        "test": "echo \"No tests yet\"",
-        "version": "node version-bump.mjs && git add manifest.json versions.json",
-        "release": "node release.mjs"
-    },
-    "keywords": [
-        "obsidian",
-        "memos",
-        "fleeting-notes",
-        "quick-capture",
-        "journal",
-        "flomo"
-    ],
-    "author": "lizhifeng",
-    "license": "MIT",
-    "devDependencies": {
-        "@eslint/json": "^0.14.0",
-        "@types/node": "^18.0.0",
-        "@typescript-eslint/eslint-plugin": "^6.0.0",
-        "@typescript-eslint/parser": "^6.21.0",
-        "@typescript-eslint/utils": "^8.58.2",
-        "esbuild": "^0.19.0",
-        "eslint": "^9.39.4",
-        "eslint-plugin-obsidianmd": "^0.1.9",
-        "globals": "^17.5.0",
-        "moment": "^2.30.1",
-        "obsidian": "latest",
-        "prettier": "^3.1.0",
-        "tslib": "^2.6.0",
-        "typescript": "^5.2.0",
-        "typescript-eslint": "^8.58.2"
-    }
+  "name": "lite-memo",
+  "version": "1.0.3",
+  "description": "闪念笔记插件 - 像发微博一样记录灵感，支持时间戳、标签分类和历史浏览",
+  "main": "main.js",
+  "scripts": {
+    "build": "npm run lint && node esbuild.config.mjs production && cp manifest.json styles.css dist/",
+    "dev": "node esbuild.config.mjs",
+    "deploy": "node deploy.mjs",
+    "build-deploy": "npm run build && node deploy.mjs",
+    "format": "prettier --write .",
+    "lint": "eslint \"**/*.{ts,tsx}\"",
+    "test": "echo \"No tests yet\"",
+    "version": "node version-bump.mjs && git add manifest.json versions.json",
+    "release": "node release.mjs"
+  },
+  "keywords": [
+    "obsidian",
+    "memos",
+    "fleeting-notes",
+    "quick-capture",
+    "journal",
+    "flomo"
+  ],
+  "author": "lizhifeng",
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/json": "^0.14.0",
+    "@types/node": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.2",
+    "@typescript-eslint/parser": "^8.58.2",
+    "@typescript-eslint/utils": "^8.58.2",
+    "esbuild": "^0.19.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-obsidianmd": "^0.1.9",
+    "globals": "^17.5.0",
+    "moment": "^2.30.1",
+    "obsidian": "latest",
+    "prettier": "^3.1.0",
+    "tslib": "^2.6.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.58.2"
+  }
 }
