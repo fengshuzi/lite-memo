@@ -21,7 +21,7 @@ import { MemosStorage } from './storage';
 import { MemoItem, MemosPluginSettings, MEMOS_VIEW_TYPE, parseQuickTags, QuickTag, parseSmartKeywords, matchSmartKeyword, matchHabitKeyword, TaskStatus, PomodoroSession } from './types';
 import { getFriendlyDateDisplay, debounce, resizeTextarea } from './utils';
 import { MemoInputModal } from './InputModal';
-import { PomodoroManager } from './pomodoro';
+import { PomodoroManager, PomodoroEventListener } from './pomodoro';
 import type MemosPlugin from './main';
 
 export class MemosView extends ItemView {
@@ -29,6 +29,7 @@ export class MemosView extends ItemView {
     private storage: MemosStorage;
     private settings: MemosPluginSettings;
     private pomodoroManager: PomodoroManager;
+    private pomodoroListener: PomodoroEventListener | null = null;
     private contentContainer: HTMLElement | null = null;
     private memosList: HTMLElement | null = null;
     private currentFilter: { tag?: string; filterTags?: string[]; search?: string; taskListMode?: 'all' | 'todo' | 'done' } = {};
@@ -70,14 +71,6 @@ export class MemosView extends ItemView {
         this.storage = storage;
         this.settings = settings;
         this.pomodoroManager = pomodoroManager;
-
-        // 注册番茄钟事件监听
-        this.pomodoroManager.addListener({
-            onSessionChange: (session) => this.onPomodoroChange(session),
-            onSessionComplete: (session) => this.onPomodoroComplete(session),
-            onBreakStart: (session) => this.onPomodoroChange(session),
-            onBreakEnd: (session) => this.onPomodoroChange(session),
-        });
     }
 
     getViewType(): string {
@@ -105,6 +98,8 @@ export class MemosView extends ItemView {
     }
 
     async onOpen(): Promise<void> {
+        this.registerPomodoroListener();
+
         const container = this.containerEl.children[1];
         container.empty();
         container.addClass('memos-view-container');
@@ -119,7 +114,29 @@ export class MemosView extends ItemView {
     }
 
     async onClose(): Promise<void> {
-        // 清理
+        this.unregisterPomodoroListener();
+        this.contentEl.empty();
+        this.contentContainer = null;
+        this.memosList = null;
+    }
+
+    private registerPomodoroListener(): void {
+        if (this.pomodoroListener) return;
+
+        this.pomodoroListener = {
+            onSessionChange: (session) => this.onPomodoroChange(session),
+            onSessionComplete: (session) => this.onPomodoroComplete(session),
+            onBreakStart: (session) => this.onPomodoroChange(session),
+            onBreakEnd: (session) => this.onPomodoroChange(session),
+        };
+        this.pomodoroManager.addListener(this.pomodoroListener);
+    }
+
+    private unregisterPomodoroListener(): void {
+        if (!this.pomodoroListener) return;
+
+        this.pomodoroManager.removeListener(this.pomodoroListener);
+        this.pomodoroListener = null;
     }
 
     /**

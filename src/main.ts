@@ -128,6 +128,8 @@ export default class MemosPlugin extends Plugin {
         if (this.pendingRefreshTimer) {
             this.getTimerWindow().clearTimeout(this.pendingRefreshTimer);
         }
+        this.app.workspace.detachLeavesOfType(MEMOS_VIEW_TYPE);
+        this.app.workspace.detachLeavesOfType(POMODORO_STATS_VIEW_TYPE);
         this.pomodoroManager?.dispose();
     }
 
@@ -210,23 +212,14 @@ export default class MemosPlugin extends Plugin {
      * 激活闪念视图
      */
     async activateView(): Promise<void> {
-        const { workspace } = this.app;
+        const workspace = this.app.workspace;
+        workspace.detachLeavesOfType(MEMOS_VIEW_TYPE);
 
-        // 检查是否已有视图打开
-        let leaf = workspace.getLeavesOfType(MEMOS_VIEW_TYPE)[0];
-
-        if (!leaf) {
-            // 在主内容区域创建新标签页（和普通文档一样）
-            leaf = workspace.getLeaf('tab');
-            await leaf.setViewState({
-                type: MEMOS_VIEW_TYPE,
-                active: true,
-            });
-        }
-
-        if (leaf) {
-            void workspace.revealLeaf(leaf);
-        }
+        const leaf = workspace.getLeaf(true);
+        await leaf.setViewState({ type: MEMOS_VIEW_TYPE, active: true });
+        await leaf.loadIfDeferred();
+        workspace.setActiveLeaf(leaf, { focus: true });
+        await workspace.revealLeaf(leaf);
     }
 
     /**
