@@ -13,7 +13,7 @@
  * 通过 scheduleDebouncedRefresh 合并 300ms 内的多次事件为一次 refresh
  */
 
-import { Plugin, addIcon, TFile } from 'obsidian';
+import { Plugin, addIcon, TFile, WorkspaceLeaf } from 'obsidian';
 import { MemosPluginSettings, DEFAULT_SETTINGS, MEMOS_VIEW_TYPE, POMODORO_STATS_VIEW_TYPE } from './types';
 import { MemosStorage } from './storage';
 import { MemosView } from './MemosView';
@@ -25,11 +25,14 @@ import { PomodoroStatsView } from './PomodoroStatsView';
 // 自定义图标
 const MEMOS_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
 
+type AttachedLeaf = WorkspaceLeaf & { parent?: unknown };
+
 export default class MemosPlugin extends Plugin {
     settings: MemosPluginSettings = DEFAULT_SETTINGS;
     storage: MemosStorage | null = null;
     pomodoroManager: PomodoroManager | null = null;
     private pendingRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    private memosLeaves = new Set<WorkspaceLeaf>();
 
     private getTimerWindow(): Window {
         const activeWindow = this.app.activeWindow as Window | undefined;
@@ -60,7 +63,10 @@ export default class MemosPlugin extends Plugin {
         // 注册视图
         this.registerView(
             MEMOS_VIEW_TYPE,
-            (leaf) => new MemosView(leaf, this, this.storage!, this.settings, this.pomodoroManager!)
+            (leaf) => {
+                this.memosLeaves.add(leaf);
+                return new MemosView(leaf, this, this.storage!, this.settings, this.pomodoroManager!);
+            }
         );
 
         // 注册番茄钟统计视图
@@ -213,13 +219,41 @@ export default class MemosPlugin extends Plugin {
      */
     async activateView(): Promise<void> {
         const workspace = this.app.workspace;
-        workspace.detachLeavesOfType(MEMOS_VIEW_TYPE);
+        const leaves = this.getTrackedMemosLeaves();
+        const leaf = leaves[0] ?? workspace.getLeaf(true);
 
-        const leaf = workspace.getLeaf(true);
-        await leaf.setViewState({ type: MEMOS_VIEW_TYPE, active: true });
+        for (const duplicate of leaves.slice(1)) {
+            duplicate.detach();
+        }
+
+        if (!leaves[0]) {
+            await leaf.setViewState({ type: MEMOS_VIEW_TYPE, active: true });
+        }
         await leaf.loadIfDeferred();
         workspace.setActiveLeaf(leaf, { focus: true });
         await workspace.revealLeaf(leaf);
+    }
+
+    private getTrackedMemosLeaves(): WorkspaceLeaf[] {
+        const workspaceLeaves: WorkspaceLeaf[] = [];
+        this.app.workspace.iterateAllLeaves((leaf) => {
+            if (leaf.getViewState().type === MEMOS_VIEW_TYPE) {
+                workspaceLeaves.push(leaf);
+            }
+        });
+
+        const leaves = [
+            ...this.memosLeaves,
+            ...workspaceLeaves,
+            ...this.app.workspace.getLeavesOfType(MEMOS_VIEW_TYPE),
+        ];
+        const uniqueLeaves = [...new Set(leaves)];
+        const attachedLeaves = uniqueLeaves.filter((leaf) => {
+            if (leaf.getViewState().type !== MEMOS_VIEW_TYPE) return false;
+            return (leaf as AttachedLeaf).parent !== null;
+        });
+        this.memosLeaves = new Set(attachedLeaves);
+        return attachedLeaves;
     }
 
     /**
