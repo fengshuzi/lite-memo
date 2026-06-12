@@ -2,17 +2,33 @@
  * 工具函数
  */
 
-import moment from 'moment';
-import { TFile } from 'obsidian';
+import { moment as obsidianMoment, TFile } from 'obsidian';
+
+type MomentUnit = 'day';
+type MomentValue = {
+    format(format: string): string;
+    toDate(): Date;
+    fromNow(): string;
+    subtract(amount: number, unit: MomentUnit): MomentValue;
+};
+type MomentFactory = {
+    (): MomentValue;
+    (date: Date): MomentValue;
+    (dateStr: string, format: string): MomentValue;
+};
+
+const moment = obsidianMoment as MomentFactory;
 
 /**
  * Auto-resize textarea to fit content.
  * If textarea is empty, resets to default height.
  */
 export function resizeTextarea(el: HTMLTextAreaElement, maxHeight: number): void {
-    el.setCssProps({ 'height': 'auto' });
+    const autoHeight = 'auto';
+    el.style.height = autoHeight;
     if (el.value) {
-        el.setCssProps({ 'height': `${Math.min(el.scrollHeight, maxHeight)}px` });
+        const height = `${Math.min(el.scrollHeight, maxHeight)}px`;
+        el.style.height = height;
     }
 }
 
