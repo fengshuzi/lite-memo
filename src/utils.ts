@@ -2,7 +2,8 @@
  * 工具函数
  */
 
-import { moment, TFile } from 'obsidian';
+import moment from 'moment';
+import { TFile } from 'obsidian';
 
 /**
  * Auto-resize textarea to fit content.

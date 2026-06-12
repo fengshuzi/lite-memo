@@ -134,8 +134,6 @@ export default class MemosPlugin extends Plugin {
         if (this.pendingRefreshTimer) {
             this.getTimerWindow().clearTimeout(this.pendingRefreshTimer);
         }
-        this.app.workspace.detachLeavesOfType(MEMOS_VIEW_TYPE);
-        this.app.workspace.detachLeavesOfType(POMODORO_STATS_VIEW_TYPE);
         this.pomodoroManager?.dispose();
     }
 
