@@ -70,11 +70,20 @@ export class PomodoroManager {
         longBreakInterval: number = 4,
     ) {
         this.plugin = plugin;
+
         this.duration = duration;
         this.soundEnabled = soundEnabled;
         this.shortBreakDuration = shortBreak;
         this.longBreakDuration = longBreak;
         this.longBreakInterval = longBreakInterval;
+    }
+
+    /**
+     * 获取用于 setTimeout / setInterval 的窗口对象
+     * 在 Obsidian 的某些窗口 / 侧边栏场景中 app.activeWindow 可能为 undefined，需要回退到 window
+     */
+    private getTimerWindow(): Window {
+        return (this.plugin.app.activeWindow as Window | undefined) ?? window;
     }
 
     // ============ 会话生命周期：start / pause / resume / stop / skipBreak ============
@@ -728,7 +737,7 @@ export class PomodoroManager {
             return;
         }
 
-        this.timerInterval = (this.plugin.app.activeWindow as Window).setInterval(() => {
+        this.timerInterval = this.getTimerWindow().setInterval(() => {
             this.tick();
         }, 1000);
     }
@@ -740,7 +749,7 @@ export class PomodoroManager {
         );
 
         if (!hasActive && this.timerInterval !== null) {
-            (this.plugin.app.activeWindow as Window).clearInterval(this.timerInterval);
+            this.getTimerWindow().clearInterval(this.timerInterval);
             this.timerInterval = null;
         }
     }
@@ -843,7 +852,7 @@ export class PomodoroManager {
     dispose(): void {
         if (this.timerInterval !== null) {
             if (this.plugin.app.activeWindow) {
-                (this.plugin.app.activeWindow as Window).clearInterval(this.timerInterval);
+                this.getTimerWindow().clearInterval(this.timerInterval);
             }
             this.timerInterval = null;
         }

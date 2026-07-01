@@ -20,6 +20,14 @@ export class MemoInputModal extends Modal {
     private isEditMode: boolean = false;
     private isTask: boolean = false; // 是否作为任务保存
 
+    /**
+     * 获取用于 setTimeout / setInterval 的窗口对象
+     * 在 Obsidian 的某些窗口 / 侧边栏场景中 activeWindow 可能为 undefined，需要回退到 window
+     */
+    private getTimerWindow(): Window {
+        return (this.activeWindow as Window | undefined) ?? window;
+    }
+
     constructor(
         app: App,
         storage: MemosStorage,
@@ -55,12 +63,12 @@ export class MemoInputModal extends Modal {
         } else {
             timeDisplay.setText(formatTime(new Date()));
             // 每分钟更新时间（仅新建模式）
-            const timeInterval = (this.activeWindow as Window).setInterval(() => {
+            const timeInterval = this.getTimerWindow().setInterval(() => {
                 timeDisplay.setText(formatTime(new Date()));
             }, 60000);
             // 清理定时器
             this.scope.register([], 'Escape', () => {
-                (this.activeWindow as Window).clearInterval(timeInterval);
+                this.getTimerWindow().clearInterval(timeInterval);
             });
         }
 
@@ -80,7 +88,7 @@ export class MemoInputModal extends Modal {
         if (this.isEditMode && this.editingMemo) {
             this.textArea.value = this.editingMemo.content;
             // 自动调整高度
-            (this.activeWindow as Window).setTimeout(() => {
+            this.getTimerWindow().setTimeout(() => {
                 if (this.textArea) {
                     resizeTextarea(this.textArea, 300);
                 }
@@ -207,7 +215,7 @@ export class MemoInputModal extends Modal {
         });
 
         // 聚焦输入框，光标移到末尾
-        (this.activeWindow as Window).setTimeout(() => {
+        this.getTimerWindow().setTimeout(() => {
             if (this.textArea) {
                 this.textArea.focus();
                 // 光标移到末尾

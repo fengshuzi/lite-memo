@@ -97,6 +97,14 @@ export class MemosView extends ItemView {
         return false;
     }
 
+    /**
+     * 获取用于 setTimeout / setInterval 的窗口对象
+     * 在 Obsidian 的某些窗口 / 侧边栏场景中 app.activeWindow 可能为 undefined，需要回退到 window
+     */
+    private getTimerWindow(): Window {
+        return (this.app.activeWindow as Window | undefined) ?? window;
+    }
+
     async onOpen(): Promise<void> {
         this.registerPomodoroListener();
 
@@ -195,7 +203,7 @@ export class MemosView extends ItemView {
         const debouncedSearch = debounce((query: string) => {
             this.currentFilter.search = query || undefined;
             void this.loadMemos();
-        }, 300, this.app.activeWindow as Window);
+        }, 300, this.getTimerWindow());
         
         searchInput.addEventListener('input', (e) => {
             debouncedSearch((e.target as HTMLInputElement).value);
@@ -999,7 +1007,7 @@ export class MemosView extends ItemView {
                         const stableMemoId = `${updatedMemo.filePath}-${updatedMemo.lineNumber}`;
                         console.debug('启动番茄钟，stableMemoId:', stableMemoId);
 
-                        (this.app.activeWindow as Window).setTimeout(() => {
+                        this.getTimerWindow().setTimeout(() => {
                             // 用切换前的原始内容，避免 DOING 行中包含 <!-- ts:... --> 注释
                             this.pomodoroManager.start(stableMemoId, undefined, memo.content);
                         }, 200);
@@ -1015,14 +1023,14 @@ export class MemosView extends ItemView {
                     const session = this.pomodoroManager.getSession(stableMemoId);
 
                     if (session && (session.state === 'short_break' || session.state === 'long_break')) {
-                        (this.app.activeWindow as Window).setTimeout(() => {
+                        this.getTimerWindow().setTimeout(() => {
                             this.pomodoroManager.skipBreak(stableMemoId);
                             // 番茄钟处理完后再移除卡片
                             this.removeCardFromTodoList(updatedMemo);
                         }, 200);
                     } else if (session && (session.state === 'running' || session.state === 'paused')) {
                         console.debug('任务完成，停止番茄钟，stableMemoId:', stableMemoId);
-                        (this.app.activeWindow as Window).setTimeout(() => {
+                        this.getTimerWindow().setTimeout(() => {
                             this.pomodoroManager.stop(session.id, true);
                             // 番茄钟处理完后再移除卡片
                             this.removeCardFromTodoList(updatedMemo);
@@ -1035,7 +1043,7 @@ export class MemosView extends ItemView {
             }
         } finally {
             // 延迟重置标志位，确保 modify 事件已经处理完毕
-            (this.app.activeWindow as Window).setTimeout(() => {
+            this.getTimerWindow().setTimeout(() => {
                 this.skipNextAutoRefresh = false;
             }, 300);
         }
