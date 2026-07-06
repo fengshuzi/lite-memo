@@ -377,7 +377,13 @@ export class MemosSettingTab extends PluginSettingTab {
         new Setting(donateSection).setName('☕ 请作者喝杯咖啡').setHeading();
         donateSection.createEl('p', { text: '如果这个插件帮助了你，欢迎请作者喝杯咖啡 ☕', cls: 'plugin-donate-desc' });
         const imgWrap = donateSection.createDiv({ cls: 'plugin-donate-qr' });
-        imgWrap.createEl('img', { attr: { src: "https://raw.githubusercontent.com/fengshuzi/images/main/wechat-donate.jpg", alt: '微信打赏', width: '160' } });
+        const donateImgSrc = "https://raw.githubusercontent.com/fengshuzi/images/main/wechat-donate.jpg";
+        const donateImg = imgWrap.createEl('img', { attr: { src: donateImgSrc, alt: '微信打赏' }, cls: 'plugin-donate-img' });
+        donateImg.addEventListener('click', () => {
+            const overlay = document.body.createDiv({ cls: 'plugin-donate-lightbox' });
+            overlay.createEl('img', { attr: { src: donateImgSrc, alt: '微信打赏' }, cls: 'plugin-donate-lightbox-img' });
+            overlay.addEventListener('click', () => overlay.remove());
+        });
         imgWrap.createEl('p', { text: '微信扫码', cls: 'plugin-donate-label' });
     }
 }
