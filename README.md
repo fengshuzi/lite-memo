@@ -1,3 +1,5 @@
+
+
 # Lite Memo
 
 Lite Memo is a lightweight capture plugin for Obsidian. It helps you quickly write down ideas, tasks, expenses, and journal-style notes with timestamps, tags, keyword automation, task tracking, and Pomodoro support. All memos are saved as plain Markdown list items in daily journal files, so your data stays portable and easy to edit.
@@ -205,7 +207,7 @@ A: 运行中的番茄钟会变为暂停状态，手动继续即可。
 ```bash
 npm install
 npm run dev      # 开发模式
-npm run build    # 构建
+npm run build    # 构建（先执行 lint）
 npm run release  # 发布到 GitHub
 ```
 
